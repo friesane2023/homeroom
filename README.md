@@ -1,8 +1,8 @@
 # Homeroom
 
-A free lesson planner and gradebook for homeschool families — built to replace the spreadsheet-plus-sticky-notes setup a lot of us end up with.
+A free lesson planner and gradebook for homeschool families — built to replace the spreadsheet-plus-sticky-notes setup a lot of us end up with. I started out with folders and felt like I was so organized until I had keep track of the grades for the High Schoolers.
 
-**[Open the live app →](#)** *(replace this link once GitHub Pages is turned on — see below)*
+**[Open the live app →](https://friesane2023.github.io/homeroom/)** *(replace this link once GitHub Pages is turned on — see below)*
 
 ## What it does
 
