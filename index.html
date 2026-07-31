@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homeroom — Homeschool Planner &amp; Gradebook</title>
+<meta name="description" content="A free, private lesson planner and gradebook for homeschool families. Runs entirely in your browser — your data never leaves your device.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F1E8;
+    --paper-raised:#FFFFFF;
+    --ink:#23312B;
+    --ink-soft:#63706A;
+    --ink-faint:#93998F;
+    --rule:#DDD5C4;
+    --rule-strong:#C9BFA9;
+    --slate:#23333B;
+    --slate-2:#2F4048;
+    --pine:#3C6E5C;      --pine-soft:#E1EAE5;
+    --indigo:#48588A;    --indigo-soft:#E5E7F1;
+    --berry:#8C4A57;     --berry-soft:#F2E5E7;
+    --amber:#B9873A;     --amber-soft:#F3E8D6;
+    --danger:#A8433A;    --danger-soft:#F5E4E1;
+    --radius:10px;
+    --radius-sm:6px;
+    --shadow:0 1px 2px rgba(35,49,43,.08), 0 6px 16px rgba(35,49,43,.07);
+    --font-display:'Fraunces', Georgia, serif;
+    --font-body:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{ font-family:var(--font-display); margin:0; font-weight:600; color:var(--ink); }
+  button, input, select, textarea{ font-family:inherit; font-size:inherit; color:inherit; }
+  button{ cursor:pointer; }
+  a{ color:inherit; }
+  ::selection{ background:var(--pine-soft); }
+
+  #app-root{ min-height:100vh; display:flex; flex-direction:column; }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    background:var(--slate);
+    color:#F2EFE6;
+    padding:14px 20px;
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    position:sticky; top:0; z-index:20;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .brand{ display:flex; align-items:baseline; gap:10px; margin-right:auto; }
+  .brand-mark{ font-family:var(--font-display); font-size:21px; font-weight:700; letter-spacing:.2px; }
+  .brand-sub{ font-size:11.5px; color:#B9C2BE; font-family:var(--font-mono); letter-spacing:.03em; }
+  .nav-tabs{ display:flex; gap:2px; background:rgba(255,255,255,.06); border-radius:999px; padding:3px; }
+  .nav-tab{
+    background:transparent; border:none; color:#CBD3CD; padding:8px 16px; border-radius:999px;
+    font-size:13.5px; font-weight:600; letter-spacing:.01em; transition:background .15s, color .15s;
+  }
+  .nav-tab:hover{ color:#fff; }
+  .nav-tab.active{ background:#F2EFE6; color:var(--slate); }
+  .nav-tabs{ flex-wrap:wrap; }
+  .year-switcher-select{ background:rgba(255,255,255,.1); color:#F2EFE6; border:1px solid rgba(255,255,255,.25); border-radius:8px; padding:6px 10px; font-size:12.5px; font-weight:600; }
+  .year-switcher-select option{ color:#23312B; }
+  textarea{ min-height:110px; resize:vertical; font-family:var(--font-body); }
+
+  /* ---------- Student folder tabs ---------- */
+  .student-tabs{
+    display:flex; gap:6px; padding:14px 20px 0 20px; flex-wrap:wrap;
+    max-width:1180px; margin:0 auto; width:100%;
+  }
+  .student-tab{
+    border:1px solid var(--rule); background:var(--paper-raised); padding:9px 16px 10px 16px;
+    border-radius:10px 10px 0 0; font-weight:600; font-size:14px; color:var(--ink-soft);
+    border-bottom:3px solid transparent; margin-bottom:-1px; display:flex; align-items:center; gap:8px;
+  }
+  .student-tab .dot{ width:8px; height:8px; border-radius:50%; }
+  .student-tab.active{ color:var(--ink); border-bottom-color: var(--tab-accent, var(--pine)); background:var(--paper-raised); box-shadow:var(--shadow); }
+  .student-tab:not(.active):hover{ color:var(--ink); }
+
+  main{ flex:1; max-width:1180px; margin:0 auto; width:100%; padding:22px 20px 60px 20px; }
+
+  /* ---------- Generic building blocks ---------- */
+  .panel{
+    background:var(--paper-raised); border:1px solid var(--rule); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:20px;
+  }
+  .panel + .panel{ margin-top:16px; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .section-head h2{ font-size:19px; }
+  .section-head .hint{ color:var(--ink-soft); font-size:13px; }
+  .eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px; border-radius:8px; border:1px solid var(--rule-strong);
+    background:var(--paper-raised); color:var(--ink); padding:8px 14px; font-weight:600; font-size:13.5px;
+    transition:background .15s, border-color .15s, transform .05s;
+  }
+  .btn:hover{ background:#FBFAF6; border-color:var(--ink-faint); }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--pine); border-color:var(--pine); color:#fff; }
+  .btn-primary:hover{ background:#335F50; border-color:#335F50; }
+  .btn-ghost{ background:transparent; border-color:transparent; padding:6px 8px; }
+  .btn-ghost:hover{ background:rgba(35,49,43,.06); }
+  .btn-danger{ border-color:var(--danger); color:var(--danger); }
+  .btn-danger:hover{ background:var(--danger-soft); }
+  .btn-danger.armed{ background:var(--danger); color:#fff; }
+  .btn-sm{ padding:5px 10px; font-size:12.5px; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .icon-btn{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid transparent; background:transparent; color:var(--ink-soft); }
+  .icon-btn:hover{ background:rgba(35,49,43,.07); color:var(--ink); }
+  .icon-btn svg{ width:16px; height:16px; }
+
+  label.field-label{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; letter-spacing:.01em; }
+  input[type=text], input[type=number], input[type=date], select, textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--rule-strong); border-radius:7px; background:#fff; color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus, button:focus-visible{
+    outline:2px solid var(--pine); outline-offset:1px; border-color:var(--pine);
+  }
+  .field-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:12px; }
+  .field{ margin-bottom:12px; }
+
+  .pill{ display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600; background:var(--rule); color:var(--ink-soft); }
+  .grade-badge{ font-family:var(--font-mono); font-weight:600; padding:2px 8px; border-radius:6px; font-size:12.5px; display:inline-block; }
+  .grade-A{ background:var(--pine-soft); color:var(--pine); }
+  .grade-B{ background:var(--indigo-soft); color:var(--indigo); }
+  .grade-C{ background:var(--amber-soft); color:#8A6425; }
+  .grade-D{ background:var(--berry-soft); color:var(--berry); }
+  .grade-F{ background:var(--danger-soft); color:var(--danger); }
+  .grade-none{ color:var(--ink-faint); }
+
+  .empty-state{ text-align:center; padding:44px 20px; border:1.5px dashed var(--rule-strong); border-radius:var(--radius); color:var(--ink-soft); }
+  .empty-state h3{ font-size:17px; margin-bottom:6px; color:var(--ink); }
+  .empty-state p{ margin:0 0 16px 0; font-size:13.5px; }
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--slate); color:#fff;
+    padding:10px 18px; border-radius:8px; font-size:13px; box-shadow:0 6px 20px rgba(0,0,0,.25); z-index:100;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
+  .toast.error{ background:var(--danger); }
+  .banner{ background:var(--amber-soft); border:1px solid var(--amber); color:#7A5A22; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:16px; }
+
+  /* ---------- Kanban ---------- */
+  .filters-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .filters-row select{ width:auto; min-width:150px; }
+  .board{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  @media (max-width:860px){ .board{ grid-template-columns:1fr; } }
+  .board-col{ background:#EFEAE0; border-radius:var(--radius); padding:10px; min-height:80px; }
+  .board-col-head{ display:flex; align-items:center; justify-content:space-between; padding:4px 6px 10px 6px; }
+  .board-col-title{ font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+  .board-count{ font-family:var(--font-mono); font-size:11.5px; background:var(--paper-raised); border-radius:999px; padding:1px 8px; color:var(--ink-soft); }
+  .card-stack{ display:flex; flex-direction:column; gap:8px; }
+  .lesson-card{
+    background:var(--paper-raised); border:1px solid var(--rule); border-left:4px solid var(--card-accent, var(--pine));
+    border-radius:8px; padding:10px 12px; box-shadow:var(--shadow);
+  }
+  .lesson-card .lc-title{ font-weight:600; font-size:13.5px; margin-bottom:4px; }
+  .lesson-card .lc-meta{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .lesson-card .lc-points{ font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); }
+  .lesson-card .lc-controls{ display:flex; align-items:center; gap:6px; margin-top:8px; }
+  .lesson-card select.status-select{ padding:5px 8px; font-size:12px; border-radius:6px; }
+  .lesson-card .lc-actions{ margin-left:auto; display:flex; gap:2px; }
+  .col-empty{ padding:16px 8px; text-align:center; color:var(--ink-faint); font-size:12.5px; }
+
+  .inline-edit{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--rule-strong); display:grid; gap:8px; }
+  .inline-edit .btn-row{ display:flex; gap:8px; justify-content:flex-end; }
+
+  /* ---------- Tables / Reports ---------- */
+  table.report-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.report-table th, table.report-table td{ border:1px solid var(--rule); padding:8px 9px; text-align:center; }
+  table.report-table th{ background:#EFEAE0; font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); font-weight:600; }
+  table.report-table td.course-cell{ text-align:left; font-weight:600; font-family:var(--font-display); font-size:14px; }
+  table.report-table td.num{ font-family:var(--font-mono); }
+  .table-scroll{ overflow-x:auto; }
+  .bar-row{ display:flex; align-items:center; gap:8px; }
+  .bar-track{ flex:1; height:7px; background:var(--rule); border-radius:99px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:99px; }
+
+  .rc-header{ display:grid; grid-template-columns:1fr 1fr; gap:4px 24px; margin-bottom:18px; font-size:13px; }
+  .rc-header .rc-line{ display:flex; justify-content:space-between; gap:10px; border-bottom:1px dotted var(--rule-strong); padding-bottom:3px; }
+  .rc-header .rc-line b{ font-weight:600; }
+  .rc-title-row{ text-align:center; margin-bottom:6px; }
+  .rc-title-row .school-name{ font-family:var(--font-display); font-size:22px; font-weight:700; }
+  .rc-title-row .rc-tag{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase; }
+
+  .legend-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; font-size:12px; color:var(--ink-soft); }
+  .legend-grid span b{ color:var(--ink); }
+
+  /* ---------- Dashboard cards ---------- */
+  .dash-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .dash-card{ border-radius:var(--radius); border:1px solid var(--rule); background:var(--paper-raised); box-shadow:var(--shadow); overflow:hidden; }
+  .dash-card-head{ padding:14px 16px; color:#fff; display:flex; justify-content:space-between; align-items:baseline; }
+  .dash-card-body{ padding:14px 16px; }
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+  .stat{ text-align:center; background:var(--paper); border-radius:7px; padding:8px 4px; }
+  .stat .num{ font-family:var(--font-mono); font-weight:600; font-size:16px; }
+  .stat .lbl{ font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; }
+  .dash-avg{ display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
+  .dash-avg .big{ font-family:var(--font-mono); font-size:26px; font-weight:600; }
+
+  /* ---------- Setup ---------- */
+  .setup-tabs{ display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .setup-tab-btn{ padding:7px 14px; border-radius:8px; border:1px solid var(--rule-strong); background:var(--paper-raised); font-weight:600; font-size:13px; color:var(--ink-soft); }
+  .setup-tab-btn.active{ background:var(--slate); color:#fff; border-color:var(--slate); }
+  .row-item{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--rule); }
+  .row-item:last-child{ border-bottom:none; }
+  .row-item .grow{ flex:1; }
+  .swatch{ width:20px; height:20px; border-radius:5px; border:1px solid rgba(0,0,0,.1); cursor:pointer; flex:none; }
+
+  .helptext{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+  .kbd{ font-family:var(--font-mono); background:var(--rule); padding:1px 5px; border-radius:4px; font-size:11px; }
+
+  footer.app-footer{ text-align:center; padding:18px; color:var(--ink-faint); font-size:11.5px; font-family:var(--font-mono); }
+
+  @media print{
+    .topbar, .student-tabs, .no-print{ display:none !important; }
+    body{ background:#fff; }
+    main{ padding:0; max-width:none; }
+    .panel{ box-shadow:none; border:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app-root">
+  <div class="topbar no-print">
+    <div class="brand">
+      <span class="brand-mark">Homeroom</span>
+      <span class="brand-sub" id="brand-school">HOMESCHOOL PLANNER</span>
+    </div>
+    <nav class="nav-tabs" id="main-nav"></nav>
+    <div id="year-switcher-host" class="no-print"></div>
+  </div>
+  <div class="student-tabs no-print" id="student-tabs"></div>
+  <main id="app-main"><div style="padding:40px;text-align:center;color:var(--ink-soft);">Loading Homeroom…</div></main>
+  <footer class="app-footer no-print">Homeroom · lessons, grades &amp; progress, kept in one place</footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+
+var STORAGE_KEY = 'homeroom-data-v2';
+var HAS_STORAGE = (typeof window !== 'undefined' && !!window.localStorage);
+
+var STATUS_COLS = [
+  {id:'todo', label:'To Do'},
+  {id:'doing', label:'In Progress'},
+  {id:'review', label:'Needs Review'},
+  {id:'done', label:'Done'}
+];
+var COLOR_NAMES = ['pine','indigo','berry','amber'];
+
+var state = {
+  loaded:false,
+  loadError:false,
+  data:null,
+  view:'dashboard',
+  activeStudentId:null,
+  plannerFilters:{subjectId:'all', quarterId:'all'},
+  plannerAddOpen:false,
+  plannerImportOpen:false,
+  plannerImportPreview:null,
+  editingLessonId:null,
+  gradesMode:'new',
+  gradesSelectedLessonId:'',
+  reportStudentId:null,
+  transcriptStudentId:null,
+  setupTab:'students',
+  subjectsYearId:null,
+  carryForwardChecked:{},
+  addingYear:false,
+  addingHistYearFor:null,
+  editingHistRowId:null,
+  confirmArmed:null,
+  toastTimer:null
+};
+
+/* ---------------- utility ---------------- */
+function uid(prefix){
+  return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+}
+function el(id){ return document.getElementById(id); }
+function esc(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function fmtPct(n){ return (Math.round(n*10)/10).toFixed(1) + '%'; }
+function fmtDate(d){
+  if(!d) return '';
+  var parts = d.split('-');
+  if(parts.length!==3) return d;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(parts[1],10)-1] + ' ' + parseInt(parts[2],10) + ', ' + parts[0];
+}
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function nextGradeLabel(label){
+  if(!label) return '';
+  var m = label.match(/(\d+)/);
+  if(m){
+    var n = parseInt(m[1],10)+1;
+    return label.replace(m[1], String(n));
+  }
+  var order = ['Freshman','Sophomore','Junior','Senior'];
+  var idx = order.indexOf(label);
+  if(idx!==-1 && idx<order.length-1) return order[idx+1];
+  return label;
+}
+
+function icon(name){
+  var icons = {
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    trash:'<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+    download:'<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>',
+    upload:'<path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 21h14"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+    book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+    scroll:'<path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/>',
+    x:'<path d="M18 6 6 18"/><path d="M6 6l12 12"/>',
+    printer:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>'
+  };
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(icons[name]||'')+'</svg>';
+}
+
+/* ---------------- default / migrated data ---------------- */
+function defaultScale(){
+  return [
+    {id:uid('g'),letter:'A',min:90,gpa:4.0},
+    {id:uid('g'),letter:'B',min:80,gpa:3.0},
+    {id:uid('g'),letter:'C',min:70,gpa:2.0},
+    {id:uid('g'),letter:'D',min:60,gpa:1.0},
+    {id:uid('g'),letter:'F',min:0,gpa:0.0}
+  ];
+}
+function defaultData(){
+  var yid = uid('yr');
+  return {
+    version:2,
+    years:[{id:yid, label:'This Year', mode:'tracked', order:1}],
+    activeYearId:yid,
+    quarters:[
+      {id:uid('q'), yearId:yid, name:'Quarter 1', start:'', end:''},
+      {id:uid('q'), yearId:yid, name:'Quarter 2', start:'', end:''},
+      {id:uid('q'), yearId:yid, name:'Quarter 3', start:'', end:''},
+      {id:uid('q'), yearId:yid, name:'Quarter 4', start:'', end:''}
+    ],
+    students:[],
+    studentYearInfo:[],
+    subjects:[],
+    lessons:[],
+    historicalCourses:[],
+    scale: defaultScale(),
+    school:{name:'', administrator:'', principal:'', county:'', schoolId:'', address:'', phone:'', authority:''}
+  };
+}
+// upgrades any older single-year saved data into the multi-year shape
+function migrateData(d){
+  if(d && d.version>=2) return d;
+  var yid = uid('yr');
+  var year = {id:yid, label:'This Year', mode:'tracked', order:1};
+  var quarters = (d.quarters||[]).map(function(q){ return {id:q.id, yearId:yid, name:q.name, start:q.start||'', end:q.end||''}; });
+  var studentYearInfo = (d.students||[]).map(function(s){ return {id:uid('syi'), studentId:s.id, yearId:yid, gradeLabel:s.gradeLevel||''}; });
+  var subjects = (d.subjects||[]).map(function(s){
+    return {id:s.id, studentId:s.studentId, yearId:yid, name:s.name, unitLabel:s.unitLabel||null, targetTotal:(s.targetTotal!=null?s.targetTotal:null), creditHours:1.0, category:''};
+  });
+  return {
+    version:2,
+    years:[year],
+    activeYearId:yid,
+    quarters:quarters,
+    students:(d.students||[]).map(function(s){ return {id:s.id, name:s.name, color:s.color, gradeLevel:s.gradeLevel||'', dob:''}; }),
+    studentYearInfo:studentYearInfo,
+    subjects:subjects,
+    lessons:d.lessons||[],
+    historicalCourses:[],
+    scale:(d.scale && d.scale.length)?d.scale:defaultScale(),
+    school:d.school||{name:'',administrator:'',principal:'',county:'',schoolId:'',address:'',phone:'',authority:''}
+  };
+}
+
+/* ---------------- data lookups ---------------- */
+function getStudent(id){ return state.data.students.find(function(s){return s.id===id;}); }
+function getSubject(id){ return state.data.subjects.find(function(s){return s.id===id;}); }
+function getQuarter(id){ return state.data.quarters.find(function(q){return q.id===id;}); }
+function getYear(id){ return state.data.years.find(function(y){return y.id===id;}); }
+function activeYear(){ return getYear(state.data.activeYearId) || state.data.years[0]; }
+function sortedYears(){ return state.data.years.slice().sort(function(a,b){return a.order-b.order;}); }
+function yearQuarters(yearId){ return state.data.quarters.filter(function(q){return q.yearId===yearId;}); }
+function studentSubjectsForYear(studentId, yearId){ return state.data.subjects.filter(function(s){return s.studentId===studentId && s.yearId===yearId;}); }
+function studentSubjects(studentId){ return studentSubjectsForYear(studentId, state.data.activeYearId); }
+function studentLessons(studentId){
+  var activeSubjIds = {};
+  studentSubjectsForYear(studentId, state.data.activeYearId).forEach(function(s){ activeSubjIds[s.id]=true; });
+  return state.data.lessons.filter(function(l){ return l.studentId===studentId && activeSubjIds[l.subjectId]; });
+}
+function getStudentYearInfo(studentId, yearId){
+  return state.data.studentYearInfo.find(function(r){return r.studentId===studentId && r.yearId===yearId;});
+}
+function gradeLabelFor(studentId, yearId){
+  var r = getStudentYearInfo(studentId, yearId);
+  return r ? r.gradeLabel : '';
+}
+
+function letterBand(pct, scale){
+  var bands = scale.slice().sort(function(a,b){ return b.min - a.min; });
+  for(var i=0;i<bands.length;i++){
+    if(pct >= bands[i].min) return bands[i];
+  }
+  return bands[bands.length-1] || null;
+}
+function letterClass(letter){
+  if(!letter) return 'grade-none';
+  var c = letter.charAt(0);
+  if(c==='A') return 'grade-A';
+  if(c==='B') return 'grade-B';
+  if(c==='C') return 'grade-C';
+  if(c==='D') return 'grade-D';
+  return 'grade-F';
+}
+
+// pooled points across graded lessons in a subject+quarter
+function quarterAggregate(studentId, subjectId, quarterId){
+  var lessons = state.data.lessons.filter(function(l){
+    return l.studentId===studentId && l.subjectId===subjectId && l.quarterId===quarterId &&
+           l.status==='done' && l.possible!=null && l.actual!=null && Number(l.possible)>0;
+  });
+  if(!lessons.length) return null;
+  var sa=0, sp=0;
+  lessons.forEach(function(l){ sa+=Number(l.actual); sp+=Number(l.possible); });
+  var pct = sp>0 ? (sa/sp*100) : null;
+  if(pct===null) return null;
+  var band = letterBand(pct, state.data.scale);
+  return {pct:pct, sumActual:sa, sumPossible:sp, count:lessons.length, letter:band?band.letter:null, gpa:band?band.gpa:null};
+}
+// cumulative = average of the quarter percentages (within that subject's own year) that have graded work
+function cumulativeAggregate(studentId, subjectId){
+  var subj = getSubject(subjectId);
+  if(!subj) return null;
+  var pcts = [];
+  yearQuarters(subj.yearId).forEach(function(q){
+    var agg = quarterAggregate(studentId, subjectId, q.id);
+    if(agg) pcts.push(agg.pct);
+  });
+  if(!pcts.length) return null;
+  var avg = pcts.reduce(function(a,b){return a+b;},0)/pcts.length;
+  var band = letterBand(avg, state.data.scale);
+  return {pct:avg, letter:band?band.letter:null, gpa:band?band.gpa:null};
+}
+
+/* ---------------- storage (browser localStorage — this copy runs standalone) ---------------- */
+function loadData(){
+  if(!HAS_STORAGE){
+    state.data = defaultData();
+    state.loadError = true;
+  } else {
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      state.data = raw ? migrateData(JSON.parse(raw)) : defaultData();
+    }catch(e){
+      console.error('Homeroom: load failed', e);
+      state.data = defaultData();
+      state.loadError = true;
+    }
+  }
+  state.loaded = true;
+  if(!state.activeStudentId && state.data.students.length) state.activeStudentId = state.data.students[0].id;
+  if(!state.reportStudentId && state.data.students.length) state.reportStudentId = state.data.students[0].id;
+  if(!state.transcriptStudentId && state.data.students.length) state.transcriptStudentId = state.data.students[0].id;
+  if(!state.subjectsYearId) state.subjectsYearId = state.data.activeYearId;
+  render();
+}
+function saveData(){
+  if(!HAS_STORAGE) return;
+  try{
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+  }catch(e){
+    console.error('Homeroom: save failed', e);
+    showToast('Could not save changes \u2014 your browser storage may be full or blocked.', true);
+  }
+}
+function showToast(msg, isErr){
+  var t = el('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr?' error':'');
+  if(state.toastTimer) clearTimeout(state.toastTimer);
+  state.toastTimer = setTimeout(function(){ t.className='toast'; }, 2400);
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderNav(){
+  var tabs = [
+    {id:'dashboard', label:'Dashboard'},
+    {id:'planner', label:'Planner'},
+    {id:'grades', label:'Grades'},
+    {id:'reports', label:'Reports'},
+    {id:'transcript', label:'Transcript'},
+    {id:'setup', label:'Setup'}
+  ];
+  el('main-nav').innerHTML = tabs.map(function(t){
+    return '<button class="nav-tab'+(state.view===t.id?' active':'')+'" data-action="switch-view" data-view="'+t.id+'">'+t.label+'</button>';
+  }).join('');
+  var nm = (state.data.school && state.data.school.name) ? state.data.school.name : 'Homeroom';
+  el('brand-school').textContent = nm.toUpperCase();
+
+  var host = el('year-switcher-host');
+  if(host){
+    var years = sortedYears();
+    if(years.length<=1){ host.innerHTML=''; }
+    else {
+      host.innerHTML = '<select class="year-switcher-select" data-action-change="switch-year">'+
+        years.map(function(y){ return '<option value="'+y.id+'"'+(y.id===state.data.activeYearId?' selected':'')+'>'+esc(y.label)+'</option>'; }).join('')+
+      '</select>';
+    }
+  }
+}
+
+function renderStudentTabs(){
+  var host = el('student-tabs');
+  var showFor = ['planner','grades','reports','transcript'];
+  if(showFor.indexOf(state.view)===-1 || !state.data.students.length){
+    host.style.display='none'; host.innerHTML=''; return;
+  }
+  host.style.display='flex';
+  var activeId = state.view==='reports' ? state.reportStudentId : (state.view==='transcript' ? state.transcriptStudentId : state.activeStudentId);
+  host.innerHTML = state.data.students.map(function(s){
+    var active = s.id===activeId;
+    return '<button class="student-tab'+(active?' active':'')+'" style="--tab-accent:var(--'+s.color+')" data-action="switch-student" data-id="'+s.id+'">'+
+      '<span class="dot" style="background:var(--'+s.color+')"></span>'+esc(s.name)+'</button>';
+  }).join('');
+}
+
+function renderNoStudentsEmpty(){
+  return '<div class="empty-state"><h3>Welcome to Homeroom</h3>'+
+    '<p>A lesson planner and gradebook for homeschool families \u2014 add each learner in Setup, then plan lessons on a To Do / In Progress / Needs Review / Done board, record grades, and print a progress report or transcript when you need one.</p>'+
+    '<p style="margin-top:-8px;">Everything you enter is saved right in this browser \u2014 nothing is sent anywhere else.</p>'+
+    '<button class="btn btn-primary" data-action="switch-view" data-view="setup">'+icon('plus')+' Add your first student</button></div>';
+}
+
+function render(){
+  if(!state.loaded) return;
+  renderNav();
+  renderStudentTabs();
+  var html;
+  if(state.view==='dashboard') html = renderDashboard();
+  else if(state.view==='setup') html = renderSetup();
+  else if(state.view==='planner') html = state.data.students.length ? renderPlanner() : renderNoStudentsEmpty();
+  else if(state.view==='grades') html = state.data.students.length ? renderGrades() : renderNoStudentsEmpty();
+  else if(state.view==='reports') html = state.data.students.length ? renderReports() : renderNoStudentsEmpty();
+  else if(state.view==='transcript') html = state.data.students.length ? renderTranscript() : renderNoStudentsEmpty();
+  else html = '';
+  var banner = state.loadError ? '<div class="banner">This session can\u2019t save to your account right now, so changes may not stick around after you close this tab. Anything loaded here loaded fine.</div>' : '';
+  el('app-main').innerHTML = banner + html;
+}
+
+/* ---------- Dashboard ---------- */
+function studentOverallStats(studentId){
+  var lessons = studentLessons(studentId);
+  var counts = {todo:0,doing:0,review:0,done:0};
+  lessons.forEach(function(l){ counts[l.status] = (counts[l.status]||0)+1; });
+  var subs = studentSubjects(studentId);
+  var pcts = [];
+  subs.forEach(function(su){
+    var c = cumulativeAggregate(studentId, su.id);
+    if(c) pcts.push(c.pct);
+  });
+  var overall = pcts.length ? pcts.reduce(function(a,b){return a+b;},0)/pcts.length : null;
+  return {total:lessons.length, counts:counts, overall:overall};
+}
+
+function renderDashboard(){
+  if(!state.data.students.length) return renderNoStudentsEmpty();
+  var cards = state.data.students.map(function(s){
+    var stats = studentOverallStats(s.id);
+    var band = stats.overall!=null ? letterBand(stats.overall, state.data.scale) : null;
+    var gradeLabel = gradeLabelFor(s.id, state.data.activeYearId) || s.gradeLevel || '';
+    return '<div class="dash-card">'+
+      '<div class="dash-card-head" style="background:var(--'+s.color+')">'+
+        '<div><div style="font-family:var(--font-display);font-size:18px;font-weight:700;">'+esc(s.name)+'</div>'+
+        '<div style="font-size:12px;opacity:.85;">'+esc(gradeLabel)+'</div></div>'+
+        (stats.overall!=null ?
+          '<div style="text-align:right;"><div style="font-family:var(--font-mono);font-size:22px;font-weight:600;">'+fmtPct(stats.overall)+'</div><div style="font-size:11px;opacity:.85;">'+esc(band?band.letter:'')+' average</div></div>' :
+          '<div style="font-size:12px;opacity:.85;">No grades yet</div>') +
+      '</div>'+
+      '<div class="dash-card-body">'+
+        '<div class="stat-grid">'+
+          '<div class="stat"><div class="num">'+stats.counts.todo+'</div><div class="lbl">To do</div></div>'+
+          '<div class="stat"><div class="num">'+stats.counts.doing+'</div><div class="lbl">Doing</div></div>'+
+          '<div class="stat"><div class="num">'+stats.counts.review+'</div><div class="lbl">Review</div></div>'+
+          '<div class="stat"><div class="num">'+stats.counts.done+'</div><div class="lbl">Done</div></div>'+
+        '</div>'+
+        (stats.counts.review>0 ? '<div class="banner" style="margin-bottom:10px;">'+stats.counts.review+' assignment'+(stats.counts.review===1?'':'s')+' waiting on your review</div>' : '') +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+          '<button class="btn btn-sm" data-action="open-student-view" data-id="'+s.id+'" data-view="planner">Open planner</button>'+
+          '<button class="btn btn-sm" data-action="open-student-view" data-id="'+s.id+'" data-view="reports">View report</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  return '<div class="section-head"><div><h2>Overview</h2><div class="hint">'+state.data.students.length+' learner'+(state.data.students.length===1?'':'s')+' \u00b7 '+esc(activeYear().label)+' \u00b7 today is '+fmtDate(todayStr())+'</div></div></div>'+
+    '<div class="dash-grid">'+cards+'</div>';
+}
+
+/* ---------- Planner (Kanban) ---------- */
+function renderDeleteIconBtn(key){
+  var armed = state.confirmArmed===key;
+  return '<button class="icon-btn'+(armed?' btn-danger armed':'')+'" title="'+(armed?'Click again to delete':'Delete')+'" data-action="confirm-delete" data-key="'+key+'">'+icon('trash')+'</button>';
+}
+
+function renderLessonCard(l, student, subs){
+  var subj = getSubject(l.subjectId);
+  var q = getQuarter(l.quarterId);
+  var editing = state.editingLessonId===l.id;
+  var graded = l.status==='done' && l.possible!=null && l.actual!=null;
+  var pctInfo = null;
+  if(graded){
+    var p = Number(l.possible), a = Number(l.actual);
+    var pct = p>0 ? (a/p*100) : 0;
+    var band = letterBand(pct, state.data.scale);
+    pctInfo = {pct:pct, letter:band?band.letter:null};
+  }
+  var statusOpts = STATUS_COLS.map(function(c){ return '<option value="'+c.id+'"'+(l.status===c.id?' selected':'')+'>'+c.label+'</option>'; }).join('');
+
+  var body = '<div class="lc-title">'+esc(l.title||'(untitled)')+'</div>'+
+    '<div class="lc-meta"><span class="pill">'+esc(subj?subj.name:'?')+'</span><span class="pill">'+esc(q?q.name:'?')+'</span></div>'+
+    '<div class="lc-points">'+(graded ? (l.actual+' / '+l.possible+' \u00b7 '+fmtPct(pctInfo.pct)+' \u00b7 '+esc(pctInfo.letter||'')) : 'Not graded yet')+'</div>'+
+    '<div class="lc-controls">'+
+      '<select class="status-select" data-action-change="lesson-status" data-id="'+l.id+'">'+statusOpts+'</select>'+
+      '<div class="lc-actions">'+
+        (!graded ? '<button class="icon-btn" title="Grade this" data-action="lesson-grade-jump" data-id="'+l.id+'">'+icon('book')+'</button>' : '')+
+        '<button class="icon-btn" title="Edit" data-action="lesson-edit-toggle" data-id="'+l.id+'">'+icon('pencil')+'</button>'+
+        renderDeleteIconBtn('lesson:'+l.id)+
+      '</div>'+
+    '</div>';
+
+  if(editing){
+    body += '<div class="inline-edit">'+
+      '<div class="field"><label class="field-label">Title</label><input type="text" id="edit-title-'+l.id+'" value="'+esc(l.title)+'"></div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label class="field-label">Subject</label><select id="edit-subject-'+l.id+'">'+subs.map(function(s){return '<option value="'+s.id+'"'+(s.id===l.subjectId?' selected':'')+'>'+esc(s.name)+'</option>';}).join('')+'</select></div>'+
+        '<div class="field"><label class="field-label">Quarter</label><select id="edit-quarter-'+l.id+'">'+yearQuarters(state.data.activeYearId).map(function(q2){return '<option value="'+q2.id+'"'+(q2.id===l.quarterId?' selected':'')+'>'+esc(q2.name)+'</option>';}).join('')+'</select></div>'+
+      '</div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label class="field-label">Possible points</label><input type="number" step="any" id="edit-possible-'+l.id+'" value="'+(l.possible!=null?l.possible:'')+'"></div>'+
+        '<div class="field"><label class="field-label">Actual points</label><input type="number" step="any" id="edit-actual-'+l.id+'" value="'+(l.actual!=null?l.actual:'')+'"></div>'+
+      '</div>'+
+      '<div class="btn-row"><button class="btn" data-action="lesson-edit-toggle" data-id="'+l.id+'">Cancel</button><button class="btn btn-primary" data-action="lesson-save-edit" data-id="'+l.id+'">Save</button></div>'+
+    '</div>';
+  }
+  return '<div class="lesson-card" style="--card-accent:var(--'+student.color+')">'+body+'</div>';
+}
+
+function renderPlannerImportPanel(student){
+  if(!state.plannerImportOpen) return '';
+  var preview = state.plannerImportPreview;
+  var body = '';
+  if(!preview){
+    body = '<p class="helptext">Paste rows copied from a spreadsheet \u2014 <b>Subject, Quarter, Title</b>, one assignment per line \u2014 or choose a file. Subject and quarter names need to match what\u2019s set up for '+esc(student.name)+'.</p>'+
+      '<textarea id="import-textarea" rows="6" style="font-family:var(--font-mono);font-size:12.5px;" placeholder="Geometry&#9;Quarter 1&#9;Week 6 Q1&#10;Geometry&#9;Quarter 1&#9;Week 7 Q1">'+esc(state.plannerImportRawText||'')+'</textarea>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">'+
+        '<label class="btn btn-sm" style="cursor:pointer;">'+icon('upload')+' Choose file<input type="file" id="import-file" accept=".csv,.txt" style="display:none;" data-action-change="import-file-change"></label>'+
+      '</div>'+
+      '<div class="btn-row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
+        '<button class="btn" data-action="import-cancel">Cancel</button>'+
+        '<button class="btn btn-primary" data-action="import-preview">Preview</button>'+
+      '</div>';
+  } else {
+    var okCount = preview.filter(function(r){return r.ok;}).length;
+    body = '<div class="table-scroll"><table class="report-table"><thead><tr><th style="text-align:left;">Title</th><th>Subject</th><th>Quarter</th></tr></thead><tbody>'+
+      preview.map(function(r){
+        return '<tr><td style="text-align:left;">'+esc(r.title)+'</td>'+
+          '<td class="'+(r.subjectId?'':'grade-none')+'">'+esc(r.subjectId?getSubject(r.subjectId).name:'not found: '+r.rawSubject)+'</td>'+
+          '<td class="'+(r.quarterId?'':'grade-none')+'">'+esc(r.quarterId?getQuarter(r.quarterId).name:'not found: '+r.rawQuarter)+'</td></tr>';
+      }).join('')+
+      '</tbody></table></div>'+
+      '<p class="helptext" style="margin-top:8px;">'+okCount+' of '+preview.length+' row'+(preview.length===1?'':'s')+' ready to import. Unmatched rows are skipped \u2014 fix the name or add the subject/quarter in Setup, then re-paste.</p>'+
+      '<div class="btn-row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
+        '<button class="btn" data-action="import-back">Back</button>'+
+        '<button class="btn btn-primary" data-action="import-confirm"'+(okCount===0?' disabled':'')+'>'+icon('check')+' Import '+okCount+' lesson'+(okCount===1?'':'s')+'</button>'+
+      '</div>';
+  }
+  return '<div class="panel" style="margin-bottom:16px;"><div class="section-head"><h2 style="font-size:16px;">Import lessons</h2></div>'+body+'</div>';
+}
+
+function renderPlanner(){
+  var student = getStudent(state.activeStudentId);
+  if(!student) return renderNoStudentsEmpty();
+  var subs = studentSubjects(student.id);
+  var quarters = yearQuarters(state.data.activeYearId);
+  var filt = state.plannerFilters;
+  var lessons = studentLessons(student.id).filter(function(l){
+    if(filt.subjectId!=='all' && l.subjectId!==filt.subjectId) return false;
+    if(filt.quarterId!=='all' && l.quarterId!==filt.quarterId) return false;
+    return true;
+  });
+
+  var subjectOptions = '<option value="all">All subjects</option>' + subs.map(function(s){
+    return '<option value="'+s.id+'"'+(filt.subjectId===s.id?' selected':'')+'>'+esc(s.name)+'</option>';
+  }).join('');
+  var quarterOptions = '<option value="all">All quarters</option>' + quarters.map(function(q){
+    return '<option value="'+q.id+'"'+(filt.quarterId===q.id?' selected':'')+'>'+esc(q.name)+'</option>';
+  }).join('');
+
+  var addForm = '';
+  if(state.plannerAddOpen){
+    if(!subs.length){
+      addForm = '<div class="panel" style="margin-bottom:16px;"><p class="helptext">Add a subject for '+esc(student.name)+' in Setup before planning lessons.</p></div>';
+    } else {
+      addForm = '<div class="panel" style="margin-bottom:16px;">'+
+        '<div class="field-row">'+
+          '<div class="field"><label class="field-label">Subject</label><select id="pl-add-subject">'+subs.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('')+'</select></div>'+
+          '<div class="field"><label class="field-label">Quarter</label><select id="pl-add-quarter">'+quarters.map(function(q){return '<option value="'+q.id+'"'+(filt.quarterId===q.id?' selected':'')+'>'+esc(q.name)+'</option>';}).join('')+'</select></div>'+
+          '<div class="field"><label class="field-label">Lesson / assignment title</label><input type="text" id="pl-add-title" placeholder="e.g. Week 6 Q1, Chapter 4, Unit 9"></div>'+
+        '</div>'+
+        '<div class="btn-row" style="display:flex;gap:8px;justify-content:flex-end;">'+
+          '<button class="btn" data-action="planner-add-toggle">Cancel</button>'+
+          '<button class="btn btn-primary" data-action="planner-add-submit">'+icon('plus')+' Add to To Do</button>'+
+        '</div>'+
+      '</div>';
+    }
+  }
+
+  var importPanel = renderPlannerImportPanel(student);
+
+  var cols = STATUS_COLS.map(function(col){
+    var items = lessons.filter(function(l){ return l.status===col.id; });
+    var cards = items.length ? items.map(function(l){ return renderLessonCard(l, student, subs); }).join('') : '<div class="col-empty">Nothing here</div>';
+    return '<div class="board-col"><div class="board-col-head"><span class="board-col-title">'+col.label+'</span><span class="board-count">'+items.length+'</span></div><div class="card-stack">'+cards+'</div></div>';
+  }).join('');
+
+  return '<div class="section-head"><div><h2>Planner</h2><div class="hint">'+esc(student.name)+'\u2019s lesson backlog, run like a sprint board \u00b7 '+esc(activeYear().label)+'</div></div>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button class="btn" data-action="planner-import-toggle">'+icon('upload')+' Import</button>'+
+        '<button class="btn btn-primary" data-action="planner-add-toggle">'+icon('plus')+' Add lesson</button>'+
+      '</div></div>'+
+    addForm+importPanel+
+    '<div class="filters-row"><select id="pl-filter-subject" data-action-change="planner-filter-subject">'+subjectOptions+'</select>'+
+      '<select id="pl-filter-quarter" data-action-change="planner-filter-quarter">'+quarterOptions+'</select></div>'+
+    (subs.length ? '<div class="board">'+cols+'</div>' :
+      '<div class="empty-state"><h3>No subjects yet</h3><p>Add subjects for '+esc(student.name)+' in Setup, then come back to plan lessons.</p><button class="btn btn-primary" data-action="switch-view" data-view="setup">'+icon('plus')+' Go to Setup</button></div>');
+}
+
+/* ---------- Grades ---------- */
+function renderInlineEditRow(l, subs){
+  return '<div class="inline-edit" style="border-top:none;padding-top:0;">'+
+    '<div class="field-row">'+
+      '<div class="field"><label class="field-label">Title</label><input type="text" id="edit-title-'+l.id+'" value="'+esc(l.title)+'"></div>'+
+      '<div class="field"><label class="field-label">Possible</label><input type="number" step="any" id="edit-possible-'+l.id+'" value="'+(l.possible!=null?l.possible:'')+'"></div>'+
+      '<div class="field"><label class="field-label">Actual</label><input type="number" step="any" id="edit-actual-'+l.id+'" value="'+(l.actual!=null?l.actual:'')+'"></div>'+
+    '</div>'+
+    '<div class="btn-row"><button class="btn" data-action="lesson-edit-toggle" data-id="'+l.id+'">Cancel</button><button class="btn btn-primary" data-action="lesson-save-edit" data-id="'+l.id+'">Save</button></div>'+
+  '</div>';
+}
+
+function renderGrades(){
+  var student = getStudent(state.activeStudentId);
+  if(!student) return renderNoStudentsEmpty();
+  var subs = studentSubjects(student.id);
+  if(!subs.length){
+    return '<div class="empty-state"><h3>No subjects yet</h3><p>Add subjects for '+esc(student.name)+' in Setup before recording grades.</p><button class="btn btn-primary" data-action="switch-view" data-view="setup">'+icon('plus')+' Go to Setup</button></div>';
+  }
+  var quarters = yearQuarters(state.data.activeYearId);
+  var reviewQueue = studentLessons(student.id).filter(function(l){ return l.status==='review'; });
+  var ungraded = studentLessons(student.id).filter(function(l){ return l.status!=='done'; });
+
+  var reviewHtml = '';
+  if(reviewQueue.length){
+    reviewHtml = '<div class="panel" style="margin-bottom:16px;"><div class="section-head"><h2 style="font-size:16px;">Needs your review ('+reviewQueue.length+')</h2></div>'+
+      '<div class="card-stack">'+reviewQueue.map(function(l){ return renderLessonCard(l, student, subs); }).join('')+'</div></div>';
+  }
+
+  var modeNew = state.gradesMode!=='existing';
+  var lessonSelectOptions = '<option value="">Choose an assignment\u2026</option>' + ungraded.map(function(l){
+    var subj = getSubject(l.subjectId);
+    return '<option value="'+l.id+'"'+(state.gradesSelectedLessonId===l.id?' selected':'')+'>'+esc(subj?subj.name:'?')+' \u2014 '+esc(l.title)+'</option>';
+  }).join('');
+  var selectedLesson = state.gradesSelectedLessonId ? state.data.lessons.find(function(l){return l.id===state.gradesSelectedLessonId;}) : null;
+
+  var formHtml = '<div class="panel" style="margin-bottom:16px;">'+
+    '<div class="section-head"><h2 style="font-size:16px;">Record a grade</h2>'+
+      '<div style="display:flex;gap:4px;">'+
+        '<button class="btn btn-sm'+(modeNew?' btn-primary':'')+'" data-action="grades-mode" data-mode="new">New assignment</button>'+
+        '<button class="btn btn-sm'+(!modeNew?' btn-primary':'')+'" data-action="grades-mode" data-mode="existing">Existing lesson'+(ungraded.length?' ('+ungraded.length+')':'')+'</button>'+
+      '</div></div>';
+
+  if(modeNew){
+    formHtml += '<div class="field-row">'+
+      '<div class="field"><label class="field-label">Subject</label><select id="gr-subject">'+subs.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('')+'</select></div>'+
+      '<div class="field"><label class="field-label">Quarter</label><select id="gr-quarter">'+quarters.map(function(q){return '<option value="'+q.id+'">'+esc(q.name)+'</option>';}).join('')+'</select></div>'+
+      '<div class="field"><label class="field-label">Assignment title</label><input type="text" id="gr-title" placeholder="e.g. Week 6 Q1"></div>'+
+    '</div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label class="field-label">Possible points</label><input type="number" step="any" id="gr-possible"></div>'+
+      '<div class="field"><label class="field-label">Actual points</label><input type="number" step="any" id="gr-actual"></div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" data-action="grades-submit-new">'+icon('check')+' Save grade</button></div>';
+  } else {
+    formHtml += '<div class="field"><label class="field-label">Assignment</label><select id="gr-existing-select" data-action-change="grades-select-lesson">'+lessonSelectOptions+'</select></div>';
+    if(selectedLesson){
+      formHtml += '<div class="field-row">'+
+        '<div class="field"><label class="field-label">Possible points</label><input type="number" step="any" id="gr-ex-possible" value="'+(selectedLesson.possible!=null?selectedLesson.possible:'')+'"></div>'+
+        '<div class="field"><label class="field-label">Actual points</label><input type="number" step="any" id="gr-ex-actual" value="'+(selectedLesson.actual!=null?selectedLesson.actual:'')+'"></div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" data-action="grades-submit-existing" data-id="'+selectedLesson.id+'">'+icon('check')+' Save &amp; mark done</button></div>';
+    } else if(ungraded.length===0){
+      formHtml += '<p class="helptext">Everything for '+esc(student.name)+' is already graded. Add a new assignment above, or plan more lessons in the Planner.</p>';
+    }
+  }
+  formHtml += '</div>';
+
+  var recent = studentLessons(student.id).filter(function(l){return l.status==='done' && l.actual!=null;})
+    .slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); }).slice(0,8);
+
+  var recentHtml = '<div class="panel"><div class="section-head"><h2 style="font-size:16px;">Recently graded</h2></div>';
+  if(!recent.length){
+    recentHtml += '<p class="helptext">Nothing graded yet.</p>';
+  } else {
+    recentHtml += '<div class="table-scroll"><table class="report-table"><thead><tr><th style="text-align:left;">Subject</th><th style="text-align:left;">Assignment</th><th>Quarter</th><th>Score</th><th>%</th><th>Grade</th><th></th></tr></thead><tbody>';
+    recent.forEach(function(l){
+      var subj = getSubject(l.subjectId);
+      var q = getQuarter(l.quarterId);
+      var pct = Number(l.possible)>0 ? Number(l.actual)/Number(l.possible)*100 : 0;
+      var band = letterBand(pct, state.data.scale);
+      recentHtml += '<tr><td style="text-align:left;">'+esc(subj?subj.name:'?')+'</td><td style="text-align:left;">'+esc(l.title)+'</td><td>'+esc(q?q.name:'?')+'</td>'+
+        '<td class="num">'+l.actual+' / '+l.possible+'</td><td class="num">'+fmtPct(pct)+'</td>'+
+        '<td><span class="grade-badge '+letterClass(band?band.letter:null)+'">'+esc(band?band.letter:'')+'</span></td>'+
+        '<td><div style="display:flex;gap:2px;justify-content:flex-end;"><button class="icon-btn" title="Edit" data-action="lesson-edit-toggle" data-id="'+l.id+'">'+icon('pencil')+'</button>'+renderDeleteIconBtn('lesson:'+l.id)+'</div></td></tr>';
+      if(state.editingLessonId===l.id){
+        recentHtml += '<tr><td colspan="7">'+renderInlineEditRow(l, subs)+'</td></tr>';
+      }
+    });
+    recentHtml += '</tbody></table></div>';
+  }
+  recentHtml += '</div>';
+
+  return '<div class="section-head"><div><h2>Grades</h2><div class="hint">Record scores for '+esc(student.name)+' \u2014 saving here marks the assignment Done</div></div></div>'+
+    reviewHtml + formHtml + recentHtml;
+}
+
+/* ---------- Reports (quarterly progress card, active year) ---------- */
+function renderReports(){
+  var student = getStudent(state.reportStudentId || state.activeStudentId);
+  if(!student) return renderNoStudentsEmpty();
+  var subs = studentSubjects(student.id);
+  var quarters = yearQuarters(state.data.activeYearId);
+  var sch = state.data.school || {};
+
+  var header = '<div class="rc-title-row"><div class="school-name">'+esc(sch.name||'Homeroom')+'</div><div class="rc-tag">'+esc(sch.authority||'')+' \u00b7 Progress / Report Card \u00b7 '+esc(activeYear().label)+'</div></div>'+
+    '<div class="rc-header">'+
+      '<div class="rc-line"><span>Administrator</span><b>'+esc(sch.administrator||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Student</span><b>'+esc(student.name)+'</b></div>'+
+      '<div class="rc-line"><span>County</span><b>'+esc(sch.county||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Grade</span><b>'+esc(gradeLabelFor(student.id, state.data.activeYearId)||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>School ID</span><b>'+esc(sch.schoolId||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Date</span><b>'+fmtDate(todayStr())+'</b></div>'+
+      '<div class="rc-line"><span>Address</span><b>'+esc(sch.address||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Phone</span><b>'+esc(sch.phone||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Principal</span><b>'+esc(sch.principal||'\u2014')+'</b></div>'+
+    '</div>';
+
+  var theadRow1 = '<tr><th rowspan="2">Course</th>';
+  quarters.forEach(function(q){ theadRow1 += '<th colspan="2">'+esc(q.name)+'</th>'; });
+  theadRow1 += '<th colspan="2">Cumulative</th><th rowspan="2">GPA</th></tr>';
+  var theadRow2 = '<tr>';
+  quarters.forEach(function(){ theadRow2 += '<th>%</th><th>Grade</th>'; });
+  theadRow2 += '<th>%</th><th>Grade</th></tr>';
+
+  var gpaSum=0, gpaCount=0;
+  var bodyRows = subs.map(function(su){
+    var cells='';
+    quarters.forEach(function(q){
+      var agg = quarterAggregate(student.id, su.id, q.id);
+      if(agg){
+        cells += '<td class="num">'+fmtPct(agg.pct)+'</td><td><span class="grade-badge '+letterClass(agg.letter)+'">'+esc(agg.letter)+'</span></td>';
+      } else {
+        cells += '<td class="num grade-none">\u2014</td><td class="grade-none">\u2014</td>';
+      }
+    });
+    var cum = cumulativeAggregate(student.id, su.id);
+    if(cum){
+      cells += '<td class="num">'+fmtPct(cum.pct)+'</td><td><span class="grade-badge '+letterClass(cum.letter)+'">'+esc(cum.letter)+'</span></td><td class="num">'+(cum.gpa!=null?cum.gpa.toFixed(1):'\u2014')+'</td>';
+      if(cum.gpa!=null){ gpaSum+=cum.gpa; gpaCount++; }
+    } else {
+      cells += '<td class="num grade-none">\u2014</td><td class="grade-none">\u2014</td><td class="num grade-none">\u2014</td>';
+    }
+    var doneCount = studentLessons(student.id).filter(function(l){return l.subjectId===su.id && l.status==='done';}).length;
+    var target = su.targetTotal ? (' <span class="helptext" style="font-family:var(--font-body);">('+doneCount+' of '+su.targetTotal+' '+(su.unitLabel||'item').toLowerCase()+'s logged)</span>') : '';
+    return '<tr><td class="course-cell">'+esc(su.name)+target+'</td>'+cells+'</tr>';
+  }).join('');
+
+  var overallGpa = gpaCount ? (gpaSum/gpaCount) : null;
+
+  var legend = '<div class="legend-grid">'+state.data.scale.slice().sort(function(a,b){return b.min-a.min;}).map(function(b){
+    return '<span><b>'+esc(b.letter)+'</b> \u2265 '+b.min+'%</span>';
+  }).join('')+'</div>';
+
+  var table = '<div class="table-scroll"><table class="report-table"><thead>'+theadRow1+theadRow2+'</thead><tbody>'+bodyRows+'</tbody></table></div>';
+
+  var actions = '<div class="no-print" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;">'+
+    '<button class="btn" data-action="report-export-csv" data-id="'+student.id+'">'+icon('download')+' Export CSV</button>'+
+    '<button class="btn btn-primary" data-action="report-print">'+icon('printer')+' Print / Save PDF</button>'+
+  '</div>';
+
+  return '<div class="section-head"><div><h2>Progress / Report Card</h2><div class="hint">Each quarter pools actual/possible points \u00b7 cumulative averages the completed quarters</div></div></div>'+
+    actions+
+    '<div class="panel">'+header+table+
+      (overallGpa!=null ? '<p style="margin-top:14px;font-weight:600;">Overall GPA: <span class="grade-badge" style="background:var(--pine-soft);color:var(--pine);">'+overallGpa.toFixed(2)+'</span></p>' : '')+
+      '<div style="margin-top:22px;border-top:1px solid var(--rule);padding-top:14px;">Principal\u2019s Signature: ______________________________________</div>'+
+      legend+
+    '</div>';
+}
+
+/* ---------- Transcript (multi-year) ---------- */
+function renderHistAddForm(y, studentId){
+  return '<div class="inline-edit" style="margin-top:10px;">'+
+    '<div class="field-row">'+
+      '<div class="field"><label class="field-label">Type</label><input type="text" id="hist-new-type" placeholder="e.g. Math"></div>'+
+      '<div class="field"><label class="field-label">Course title</label><input type="text" id="hist-new-title" placeholder="e.g. Algebra I"></div>'+
+    '</div>'+
+    '<div class="field-row">'+
+      '<div class="field"><label class="field-label">Grade %</label><input type="number" step="any" id="hist-new-pct"></div>'+
+      '<div class="field"><label class="field-label">Credit</label><input type="number" step="0.5" id="hist-new-credit" value="1"></div>'+
+    '</div>'+
+    '<div class="btn-row"><button class="btn" data-action="hist-add-cancel">Cancel</button><button class="btn btn-primary" data-action="hist-add-submit" data-year="'+y.id+'" data-student="'+studentId+'">Add course</button></div>'+
+  '</div>';
+}
+function renderHistEditRow(h){
+  return '<div class="inline-edit" style="border-top:none;padding-top:0;">'+
+    '<div class="field-row">'+
+      '<div class="field"><label class="field-label">Type</label><input type="text" id="hist-edit-type-'+h.id+'" value="'+esc(h.type||'')+'"></div>'+
+      '<div class="field"><label class="field-label">Course title</label><input type="text" id="hist-edit-title-'+h.id+'" value="'+esc(h.title)+'"></div>'+
+      '<div class="field"><label class="field-label">Grade %</label><input type="number" step="any" id="hist-edit-pct-'+h.id+'" value="'+h.gradePct+'"></div>'+
+      '<div class="field"><label class="field-label">Credit</label><input type="number" step="0.5" id="hist-edit-credit-'+h.id+'" value="'+h.credit+'"></div>'+
+    '</div>'+
+    '<div class="btn-row"><button class="btn" data-action="hist-edit-toggle" data-id="'+h.id+'">Cancel</button><button class="btn btn-primary" data-action="hist-edit-save" data-id="'+h.id+'">Save</button></div>'+
+  '</div>';
+}
+
+function renderTranscript(){
+  if(!state.data.students.length) return renderNoStudentsEmpty();
+  var student = getStudent(state.transcriptStudentId) || state.data.students[0];
+  var sch = state.data.school || {};
+  var years = sortedYears();
+
+  var header = '<div class="rc-title-row"><div class="school-name">'+esc(sch.name||'Homeroom')+'</div><div class="rc-tag">High School Transcript</div></div>'+
+    '<div class="rc-header">'+
+      '<div class="rc-line"><span>Student</span><b>'+esc(student.name)+'</b></div>'+
+      '<div class="rc-line"><span>Date</span><b>'+fmtDate(todayStr())+'</b></div>'+
+      '<div class="rc-line"><span>Date of birth</span><b>'+(student.dob?fmtDate(student.dob):'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Administrator</span><b>'+esc(sch.administrator||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Address</span><b>'+esc(sch.address||'\u2014')+'</b></div>'+
+      '<div class="rc-line"><span>Phone</span><b>'+esc(sch.phone||'\u2014')+'</b></div>'+
+    '</div>';
+
+  if(!years.length){
+    return '<div class="section-head"><div><h2>Transcript</h2></div></div><div class="panel">'+header+'<p class="helptext" style="margin-top:14px;">No school years set up yet \u2014 add one in Setup.</p></div>';
+  }
+
+  var allGpas = [], allCredits = 0;
+  var yearBlocks = years.map(function(y){
+    var gradeLabel = gradeLabelFor(student.id, y.id);
+    var rows, sumCredit=0, pcts=[], gpas=[];
+    if(y.mode==='tracked'){
+      var subsY = studentSubjectsForYear(student.id, y.id);
+      rows = subsY.map(function(su){
+        var cum = cumulativeAggregate(student.id, su.id);
+        var credit = su.creditHours!=null ? su.creditHours : 1;
+        sumCredit += credit;
+        if(cum){ pcts.push(cum.pct); if(cum.gpa!=null) gpas.push(cum.gpa); }
+        return '<tr><td style="text-align:left;">'+esc(su.category||'')+'</td><td class="course-cell">'+esc(su.name)+'</td>'+
+          '<td class="num">'+(cum?fmtPct(cum.pct):'\u2014')+'</td>'+
+          '<td class="num">'+credit+'</td>'+
+          '<td class="num">'+(cum&&cum.gpa!=null?cum.gpa.toFixed(1):'\u2014')+'</td></tr>';
+      }).join('');
+      if(!subsY.length) rows = '<tr><td colspan="5" class="helptext" style="text-align:left;">No courses recorded for this year yet.</td></tr>';
+    } else {
+      var hist = state.data.historicalCourses.filter(function(h){return h.studentId===student.id && h.yearId===y.id;});
+      rows = hist.map(function(h){
+        var band = letterBand(h.gradePct, state.data.scale);
+        sumCredit += (h.credit||0);
+        pcts.push(h.gradePct); if(band){ gpas.push(band.gpa); }
+        var r = '<tr><td style="text-align:left;">'+esc(h.type||'')+'</td><td class="course-cell">'+esc(h.title)+'</td>'+
+          '<td class="num">'+fmtPct(h.gradePct)+'</td><td class="num">'+h.credit+'</td><td class="num">'+(band?band.gpa.toFixed(1):'\u2014')+'</td>'+
+          '<td class="no-print"><div style="display:flex;gap:2px;"><button class="icon-btn" title="Edit" data-action="hist-edit-toggle" data-id="'+h.id+'">'+icon('pencil')+'</button>'+renderDeleteIconBtn('hist:'+h.id)+'</div></td></tr>';
+        if(state.editingHistRowId===h.id) r += '<tr class="no-print"><td colspan="6">'+renderHistEditRow(h)+'</td></tr>';
+        return r;
+      }).join('');
+      if(!hist.length) rows = '<tr><td colspan="6" class="helptext" style="text-align:left;">No courses added for this year yet.</td></tr>';
+    }
+    allCredits += sumCredit;
+    allGpas = allGpas.concat(gpas);
+    var avgPct = pcts.length? pcts.reduce(function(a,b){return a+b;},0)/pcts.length : null;
+    var avgGpa = gpas.length? gpas.reduce(function(a,b){return a+b;},0)/gpas.length : null;
+
+    var addHistRow = '';
+    if(y.mode==='historical'){
+      addHistRow = state.addingHistYearFor===y.id ? renderHistAddForm(y, student.id) :
+        '<button class="btn btn-sm no-print" style="margin-top:8px;" data-action="hist-add-open" data-year="'+y.id+'">'+icon('plus')+' Add course</button>';
+    }
+
+    return '<div style="margin-top:22px;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:4px;margin-bottom:6px;flex-wrap:wrap;gap:6px;">'+
+        '<h3 style="font-size:16px;">'+esc(y.label)+(gradeLabel?' \u2014 '+esc(gradeLabel):'')+'</h3>'+
+        '<span class="pill">'+(y.mode==='tracked'?'Tracked live':'Historical entry')+'</span>'+
+      '</div>'+
+      '<div class="table-scroll"><table class="report-table"><thead><tr><th style="text-align:left;">Type</th><th style="text-align:left;">Course</th><th>Grade</th><th>Credit</th><th>GPA</th>'+(y.mode==='historical'?'<th class="no-print"></th>':'')+'</tr></thead><tbody>'+rows+
+        '<tr style="font-weight:700;background:#EFEAE0;"><td colspan="2" style="text-align:left;">Totals / Averages</td><td class="num">'+(avgPct!=null?fmtPct(avgPct):'\u2014')+'</td><td class="num">'+sumCredit+'</td><td class="num">'+(avgGpa!=null?avgGpa.toFixed(2):'\u2014')+'</td>'+(y.mode==='historical'?'<td class="no-print"></td>':'')+'</tr>'+
+      '</tbody></table></div>'+
+      addHistRow+
+    '</div>';
+  }).join('');
+
+  var cumGpa = allGpas.length ? allGpas.reduce(function(a,b){return a+b;},0)/allGpas.length : null;
+
+  var summary = '<div style="display:flex;gap:24px;flex-wrap:wrap;margin:14px 0 4px 0;">'+
+    '<div><div class="eyebrow">Cumulative GPA</div><div style="font-family:var(--font-mono);font-size:22px;font-weight:600;">'+(cumGpa!=null?cumGpa.toFixed(2):'\u2014')+'</div></div>'+
+    '<div><div class="eyebrow">Total credits</div><div style="font-family:var(--font-mono);font-size:22px;font-weight:600;">'+allCredits+'</div></div>'+
+  '</div>';
+
+  var actions = '<div class="no-print" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px;">'+
+    '<button class="btn btn-primary" data-action="report-print">'+icon('printer')+' Print / Save PDF</button>'+
+  '</div>';
+
+  return '<div class="section-head"><div><h2>Transcript</h2><div class="hint">Every school year in one record \u2014 tracked years pull live, earlier years you can fill in by hand</div></div></div>'+
+    actions+
+    '<div class="panel">'+header+summary+yearBlocks+
+      '<div style="margin-top:22px;border-top:1px solid var(--rule);padding-top:14px;">Registrar / Administrator Signature: ______________________________________</div>'+
+    '</div>';
+}
+
+/* ---------- Setup ---------- */
+function renderSetup(){
+  var tabs = [
+    {id:'years', label:'Years'},
+    {id:'students', label:'Students'},
+    {id:'subjects', label:'Subjects'},
+    {id:'quarters', label:'Quarters'},
+    {id:'scale', label:'Grading scale'},
+    {id:'school', label:'School info'},
+    {id:'data', label:'Data'}
+  ];
+  var tabBtns = tabs.map(function(t){
+    return '<button class="setup-tab-btn'+(state.setupTab===t.id?' active':'')+'" data-action="setup-tab" data-tab="'+t.id+'">'+t.label+'</button>';
+  }).join('');
+  var body = '';
+  if(state.setupTab==='years') body = renderSetupYears();
+  else if(state.setupTab==='students') body = renderSetupStudents();
+  else if(state.setupTab==='quarters') body = renderSetupQuarters();
+  else if(state.setupTab==='subjects') body = renderSetupSubjects();
+  else if(state.setupTab==='scale') body = renderSetupScale();
+  else if(state.setupTab==='school') body = renderSetupSchool();
+  else if(state.setupTab==='data') body = renderSetupData();
+
+  return '<div class="section-head"><div><h2>Setup</h2><div class="hint">Years, students, subjects, and how grades are scored</div></div></div>'+
+    '<div class="setup-tabs">'+tabBtns+'</div>'+
+    '<div class="panel">'+body+'</div>';
+}
+
+function renderSetupYears(){
+  var years = sortedYears();
+  var rows = years.map(function(y){
+    var isActive = y.id===state.data.activeYearId;
+    return '<div class="row-item">'+
+      '<input type="text" class="grow" id="yr-label-'+y.id+'" value="'+esc(y.label)+'" style="max-width:160px;">'+
+      '<span class="pill">'+(y.mode==='tracked'?'Tracked':'Historical')+'</span>'+
+      (isActive ? '<span class="pill" style="background:var(--pine-soft);color:var(--pine);">Active</span>' : '<button class="btn btn-sm" data-action="year-set-active" data-id="'+y.id+'">Set active</button>')+
+      '<button class="btn btn-sm" data-action="year-save" data-id="'+y.id+'">Save</button>'+
+      renderDeleteIconBtn('year:'+y.id)+
+    '</div>';
+  }).join('');
+
+  var studentGradeRows = '';
+  if(state.data.students.length){
+    studentGradeRows = '<div class="eyebrow" style="margin-top:18px;">Grade level per student, for the active year ('+esc(activeYear().label)+')</div>'+
+      state.data.students.map(function(s){
+        var val = gradeLabelFor(s.id, state.data.activeYearId);
+        return '<div class="row-item"><span class="grow">'+esc(s.name)+'</span>'+
+          '<input type="text" id="syi-'+s.id+'" value="'+esc(val)+'" placeholder="e.g. 11th Grade" style="max-width:160px;">'+
+          '<button class="btn btn-sm" data-action="studentyear-save" data-id="'+s.id+'">Save</button></div>';
+      }).join('');
+  }
+
+  var addForm = state.addingYear ? (
+    '<div class="panel" style="margin-top:14px;">'+
+      '<div class="field-row">'+
+        '<div class="field"><label class="field-label">Year label</label><input type="text" id="new-year-label" placeholder="e.g. 2026-2027"></div>'+
+        '<div class="field"><label class="field-label">Type</label><select id="new-year-mode"><option value="tracked">Tracked \u2014 plan lessons &amp; grade live</option><option value="historical">Historical \u2014 type in final grades</option></select></div>'+
+      '</div>'+
+      '<div class="btn-row" style="display:flex;gap:8px;justify-content:flex-end;"><button class="btn" data-action="year-add-cancel">Cancel</button><button class="btn btn-primary" data-action="year-add-submit">'+icon('plus')+' Create year</button></div>'+
+    '</div>'
+  ) : '<button class="btn btn-primary" style="margin-top:14px;" data-action="year-add-open">'+icon('plus')+' Add school year</button>';
+
+  return '<div class="eyebrow">School years</div><p class="helptext">The active year is what Planner, Grades, and Dashboard show. Add a new year when you\u2019re ready to move into it \u2014 last year stays exactly as it was, and both show up on the Transcript.</p>'+
+    rows + studentGradeRows + addForm;
+}
+
+function renderSetupStudents(){
+  var rows = state.data.students.map(function(s){
+    return '<div class="row-item">'+
+      '<span class="swatch" style="background:var(--'+s.color+')" title="Click to change color" data-action="student-color" data-id="'+s.id+'"></span>'+
+      '<input type="text" class="grow" id="s-name-'+s.id+'" value="'+esc(s.name)+'" placeholder="Name" style="max-width:170px;">'+
+      '<input type="date" id="s-dob-'+s.id+'" value="'+esc(s.dob||'')+'" title="Date of birth">'+
+      '<button class="btn btn-sm" data-action="student-save" data-id="'+s.id+'">Save</button>'+
+      renderDeleteIconBtn('student:'+s.id)+
+    '</div>';
+  }).join('');
+  return '<div class="eyebrow">Learners</div><p class="helptext">Grade level is set per school year now \u2014 see the Years tab.</p>'+
+    (rows || '<p class="helptext">No students yet.</p>')+
+    '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="student-add">'+icon('plus')+' Add student</button></div>';
+}
+
+function renderSetupQuarters(){
+  var yr = activeYear();
+  var qs = yearQuarters(yr.id);
+  var rows = qs.map(function(q){
+    return '<div class="row-item">'+
+      '<input type="text" class="grow" id="q-name-'+q.id+'" value="'+esc(q.name)+'" style="max-width:160px;">'+
+      '<input type="date" id="q-start-'+q.id+'" value="'+esc(q.start||'')+'">'+
+      '<span class="helptext">to</span>'+
+      '<input type="date" id="q-end-'+q.id+'" value="'+esc(q.end||'')+'">'+
+      '<button class="btn btn-sm" data-action="quarter-save" data-id="'+q.id+'">Save</button>'+
+      renderDeleteIconBtn('quarter:'+q.id)+
+    '</div>';
+  }).join('');
+  return '<div class="eyebrow">Terms \u2014 '+esc(yr.label)+'</div><p class="helptext">Dates are just for your reference \u2014 you pick the quarter directly when you plan or grade a lesson, so nothing falls into a gap between terms.</p>'+
+    (rows || '<p class="helptext">This year has no quarters (it may be historical).</p>')+
+    '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="quarter-add">'+icon('plus')+' Add quarter</button></div>';
+}
+
+function renderSetupSubjects(){
+  if(!state.data.students.length) return '<p class="helptext">Add a student first.</p>';
+  var years = sortedYears();
+  var selYearId = state.subjectsYearId || state.data.activeYearId;
+  var yearSelect = '<div class="field" style="max-width:280px;margin-bottom:16px;"><label class="field-label">Editing subjects for</label><select id="subj-year-select" data-action-change="subjects-year-select">'+
+    years.map(function(y){ return '<option value="'+y.id+'"'+(y.id===selYearId?' selected':'')+'>'+esc(y.label)+(y.id===state.data.activeYearId?' (active)':'')+'</option>'; }).join('')+
+  '</select></div>';
+
+  var selYear = getYear(selYearId);
+  if(!selYear || selYear.mode!=='tracked'){
+    return yearSelect + '<p class="helptext">That\u2019s a historical year \u2014 enter its courses directly on the Transcript page instead of here.</p>';
+  }
+
+  var yearsOrdered = years;
+  var idx = yearsOrdered.findIndex(function(y){return y.id===selYearId;});
+  var prevYear = idx>0 ? yearsOrdered[idx-1] : null;
+
+  var body = state.data.students.map(function(s){
+    var subs = studentSubjectsForYear(s.id, selYearId);
+    var rows = subs.map(function(su){
+      return '<div class="row-item">'+
+        '<input type="text" class="grow" id="su-name-'+su.id+'" value="'+esc(su.name)+'" placeholder="Subject">'+
+        '<input type="text" id="su-cat-'+su.id+'" value="'+esc(su.category||'')+'" placeholder="Category" style="max-width:100px;" title="e.g. Math, English, Elective">'+
+        '<input type="number" step="0.5" id="su-credit-'+su.id+'" value="'+(su.creditHours!=null?su.creditHours:1)+'" style="max-width:70px;" title="Credit hours">'+
+        '<input type="number" step="1" id="su-target-'+su.id+'" value="'+(su.targetTotal!=null?su.targetTotal:'')+'" placeholder="Target #" style="max-width:85px;">'+
+        '<input type="text" id="su-unit-'+su.id+'" value="'+esc(su.unitLabel||'')+'" placeholder="Unit" style="max-width:85px;">'+
+        '<button class="btn btn-sm" data-action="subject-save" data-id="'+su.id+'">Save</button>'+
+        renderDeleteIconBtn('subject:'+su.id)+
+      '</div>';
+    }).join('');
+
+    var carry = '';
+    if(prevYear){
+      var prevSubs = studentSubjectsForYear(s.id, prevYear.id);
+      var alreadyCarried = {};
+      subs.forEach(function(cs){ alreadyCarried[cs.name.toLowerCase()] = true; });
+      var carriable = prevSubs.filter(function(ps){ return !alreadyCarried[ps.name.toLowerCase()]; });
+      if(carriable.length){
+        carry = '<div class="banner" style="background:var(--indigo-soft);border-color:var(--indigo);color:var(--indigo);">'+
+          '<div style="font-weight:600;margin-bottom:6px;">Carry forward from '+esc(prevYear.label)+'?</div>'+
+          carriable.map(function(ps){
+            var ckey = s.id+':'+ps.id;
+            var checked = state.carryForwardChecked[ckey] ? 'checked' : '';
+            return '<label style="display:inline-flex;align-items:center;gap:5px;margin:3px 10px 3px 0;font-weight:400;color:var(--ink);">'+
+              '<input type="checkbox" data-action-change="carry-toggle" data-key="'+ckey+'" '+checked+'> '+esc(ps.name)+'</label>';
+          }).join('')+
+          '<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" data-action="carry-forward-submit" data-student="'+s.id+'" data-fromyear="'+prevYear.id+'" data-toyear="'+selYearId+'">Carry forward checked subjects</button></div>'+
+        '</div>';
+      }
+    }
+
+    return '<div style="margin-bottom:18px;"><div class="eyebrow" style="color:var(--'+s.color+');">'+esc(s.name)+'</div>'+
+      carry+
+      (rows || '<p class="helptext">No subjects yet for this year.</p>')+
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><input type="text" id="new-subject-'+s.id+'" placeholder="New subject name" style="max-width:200px;">'+
+      '<button class="btn btn-sm" data-action="subject-add" data-student="'+s.id+'" data-year="'+selYearId+'">'+icon('plus')+' Add subject</button></div></div>';
+  }).join('');
+
+  return yearSelect + body;
+}
+
+function renderSetupScale(){
+  var rows = state.data.scale.slice().sort(function(a,b){return b.min-a.min;}).map(function(b){
+    return '<div class="row-item">'+
+      '<input type="text" id="sc-letter-'+b.id+'" value="'+esc(b.letter)+'" style="max-width:64px;">'+
+      '<span class="helptext">min %</span><input type="number" step="any" id="sc-min-'+b.id+'" value="'+b.min+'" style="max-width:90px;">'+
+      '<span class="helptext">GPA</span><input type="number" step="0.1" id="sc-gpa-'+b.id+'" value="'+b.gpa+'" style="max-width:90px;">'+
+      renderDeleteIconBtn('scale:'+b.id)+
+    '</div>';
+  }).join('');
+  return '<div class="eyebrow">Grading scale</div><p class="helptext">A score gets the highest band whose minimum percent it meets or beats. Used for report cards and the transcript alike. Edit values, then Save.</p>'+
+    rows+
+    '<div style="margin-top:14px;display:flex;gap:8px;">'+
+      '<button class="btn" data-action="scale-add">'+icon('plus')+' Add band</button>'+
+      '<button class="btn btn-primary" data-action="scale-save-all">Save scale</button>'+
+    '</div>';
+}
+
+function renderSetupSchool(){
+  var sch = state.data.school || {};
+  var f = function(id,label,val){
+    return '<div class="field"><label class="field-label">'+label+'</label><input type="text" id="'+id+'" value="'+esc(val||'')+'"></div>';
+  };
+  return '<div class="eyebrow">School / program info</div><p class="helptext">Fills in the header of your printable progress report and transcript.</p>'+
+    '<div class="field-row">'+f('sch-name','School name',sch.name)+f('sch-authority','Reporting authority',sch.authority)+'</div>'+
+    '<div class="field-row">'+f('sch-administrator','Administrator',sch.administrator)+f('sch-principal','Principal',sch.principal)+'</div>'+
+    '<div class="field-row">'+f('sch-county','County',sch.county)+f('sch-schoolid','School ID',sch.schoolId)+'</div>'+
+    '<div class="field-row">'+f('sch-address','Address',sch.address)+f('sch-phone','Phone',sch.phone)+'</div>'+
+    '<button class="btn btn-primary" data-action="school-save">Save school info</button>';
+}
+
+function renderSetupData(){
+  return '<div class="eyebrow">Your data</div>'+
+    '<p class="helptext">Everything saves automatically to your Claude account as you go. Use these if you want a backup or a fresh start.</p>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">'+
+      '<button class="btn" data-action="data-export">'+icon('download')+' Export all data (JSON)</button>'+
+      '<button class="btn btn-danger'+(state.confirmArmed==='reset:all'?' armed':'')+'" data-action="confirm-delete" data-key="reset:all">'+(state.confirmArmed==='reset:all'?'Click again to erase everything':'Reset all data')+'</button>'+
+    '</div>';
+}
+
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+document.addEventListener('click', function(e){
+  var t = e.target.closest('[data-action]');
+  if(!t) return;
+  var action = t.getAttribute('data-action');
+  var id = t.getAttribute('data-id');
+  var handlers = {
+    'switch-view': function(){ state.view = t.getAttribute('data-view'); state.confirmArmed=null; render(); },
+    'switch-student': function(){
+      if(state.view==='reports') state.reportStudentId = id;
+      else if(state.view==='transcript') state.transcriptStudentId = id;
+      else state.activeStudentId = id;
+      state.confirmArmed=null; state.editingLessonId=null; state.plannerAddOpen=false; state.plannerImportOpen=false;
+      render();
+    },
+    'open-student-view': function(){
+      var v = t.getAttribute('data-view');
+      state.activeStudentId = id; state.reportStudentId = id; state.transcriptStudentId = id; state.view = v; render();
+    },
+    'setup-tab': function(){ state.setupTab = t.getAttribute('data-tab'); state.confirmArmed=null; render(); },
+
+    'planner-add-toggle': function(){ state.plannerAddOpen = !state.plannerAddOpen; state.plannerImportOpen=false; render(); },
+    'planner-add-submit': doPlannerAddSubmit,
+    'planner-import-toggle': function(){
+      state.plannerImportOpen = !state.plannerImportOpen;
+      state.plannerImportPreview = null; state.plannerImportRawText='';
+      state.plannerAddOpen=false;
+      render();
+    },
+    'import-cancel': function(){ state.plannerImportOpen=false; state.plannerImportPreview=null; state.plannerImportRawText=''; render(); },
+    'import-preview': doImportPreview,
+    'import-back': function(){ state.plannerImportPreview=null; render(); },
+    'import-confirm': doImportConfirm,
+
+    'lesson-edit-toggle': function(){ state.editingLessonId = (state.editingLessonId===id) ? null : id; render(); },
+    'lesson-save-edit': function(){ doLessonSaveEdit(id); },
+    'lesson-grade-jump': function(){
+      var l = state.data.lessons.find(function(x){return x.id===id;});
+      if(l){ state.view='grades'; state.activeStudentId=l.studentId; state.gradesMode='existing'; state.gradesSelectedLessonId=id; render(); }
+    },
+
+    'grades-mode': function(){ state.gradesMode = t.getAttribute('data-mode'); state.gradesSelectedLessonId=''; render(); },
+    'grades-submit-new': doGradesSubmitNew,
+    'grades-submit-existing': function(){ doGradesSubmitExisting(id); },
+
+    'report-print': function(){ window.print(); },
+    'report-export-csv': function(){ doExportReportCsv(id); },
+
+    'student-add': doStudentAdd,
+    'student-save': function(){ doStudentSave(id); },
+    'student-color': function(){ doStudentCycleColor(id); },
+
+    'year-add-open': function(){ state.addingYear = true; render(); },
+    'year-add-cancel': function(){ state.addingYear = false; render(); },
+    'year-add-submit': doYearAddSubmit,
+    'year-save': function(){ doYearSave(id); },
+    'year-set-active': function(){ doYearSetActive(id); },
+    'studentyear-save': function(){ doStudentYearSave(id); },
+
+    'quarter-add': doQuarterAdd,
+    'quarter-save': function(){ doQuarterSave(id); },
+
+    'subject-add': function(){ doSubjectAdd(t.getAttribute('data-student'), t.getAttribute('data-year')); },
+    'subject-save': function(){ doSubjectSave(id); },
+    'carry-forward-submit': function(){ doCarryForwardSubmit(t.getAttribute('data-student'), t.getAttribute('data-fromyear'), t.getAttribute('data-toyear')); },
+
+    'hist-add-open': function(){ state.addingHistYearFor = t.getAttribute('data-year'); render(); },
+    'hist-add-cancel': function(){ state.addingHistYearFor = null; render(); },
+    'hist-add-submit': function(){ doHistAddSubmit(t.getAttribute('data-year'), t.getAttribute('data-student')); },
+    'hist-edit-toggle': function(){ state.editingHistRowId = (state.editingHistRowId===id)?null:id; render(); },
+    'hist-edit-save': function(){ doHistEditSave(id); },
+
+    'scale-add': doScaleAdd,
+    'scale-save-all': doScaleSaveAll,
+
+    'school-save': doSchoolSave,
+    'data-export': doDataExport,
+
+    'confirm-delete': function(){ doConfirmDelete(t.getAttribute('data-key')); }
+  };
+  if(handlers[action]) handlers[action]();
+});
+
+document.addEventListener('change', function(e){
+  var t = e.target.closest('[data-action-change]');
+  if(!t) return;
+  var action = t.getAttribute('data-action-change');
+  if(action==='planner-filter-subject'){ state.plannerFilters.subjectId = t.value; render(); }
+  else if(action==='planner-filter-quarter'){ state.plannerFilters.quarterId = t.value; render(); }
+  else if(action==='lesson-status'){ doLessonStatusChange(t.getAttribute('data-id'), t.value); }
+  else if(action==='grades-select-lesson'){ state.gradesSelectedLessonId = t.value; render(); }
+  else if(action==='switch-year'){ mutateAndSave(function(){ state.data.activeYearId = t.value; }); }
+  else if(action==='subjects-year-select'){ state.subjectsYearId = t.value; render(); }
+  else if(action==='carry-toggle'){
+    var key = t.getAttribute('data-key');
+    state.carryForwardChecked[key] = t.checked;
+  }
+  else if(action==='import-file-change'){
+    var file = t.files && t.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var ta = el('import-textarea');
+      if(ta) ta.value = reader.result;
+    };
+    reader.readAsText(file);
+  }
+});
+
+/* ---------------- actions ---------------- */
+function mutateAndSave(fn){ fn(); saveData(); render(); }
+
+function doPlannerAddSubmit(){
+  var subjSel = el('pl-add-subject'), qSel = el('pl-add-quarter'), titleInp = el('pl-add-title');
+  if(!subjSel || !titleInp) return;
+  var title = titleInp.value.trim();
+  if(!title){ showToast('Give the lesson a title first.', true); return; }
+  mutateAndSave(function(){
+    state.data.lessons.push({
+      id: uid('lsn'), studentId: state.activeStudentId, subjectId: subjSel.value, quarterId: qSel.value,
+      title: title, status:'todo', possible:null, actual:null, date: todayStr(), notes:''
+    });
+    state.plannerAddOpen = false;
+  });
+  showToast('Lesson added to To Do.');
+}
+
+/* ---- Planner bulk import ---- */
+function parseImportLine(line){
+  line = line.replace(/\r$/,'');
+  if(!line.trim()) return null;
+  var delim = line.indexOf('\t')!==-1 ? '\t' : ',';
+  var idx1 = line.indexOf(delim);
+  if(idx1===-1) return null;
+  var idx2 = line.indexOf(delim, idx1+1);
+  if(idx2===-1) return null;
+  return {
+    subject: line.substring(0,idx1).trim(),
+    quarter: line.substring(idx1+1,idx2).trim(),
+    title: line.substring(idx2+1).trim()
+  };
+}
+function doImportPreview(){
+  var ta = el('import-textarea');
+  if(!ta) return;
+  var text = ta.value;
+  state.plannerImportRawText = text;
+  var subs = studentSubjects(state.activeStudentId);
+  var quarters = yearQuarters(state.data.activeYearId);
+  var lines = text.split('\n');
+  var rows = [];
+  lines.forEach(function(line, i){
+    var parsed = parseImportLine(line);
+    if(!parsed) return;
+    if(i===0 && /subject/i.test(parsed.subject) && /quarter/i.test(parsed.quarter)) return;
+    var subj = subs.find(function(s){return s.name.toLowerCase()===parsed.subject.toLowerCase();});
+    var qtr = quarters.find(function(q){return q.name.toLowerCase()===parsed.quarter.toLowerCase();});
+    rows.push({title:parsed.title, rawSubject:parsed.subject, rawQuarter:parsed.quarter, subjectId:subj?subj.id:null, quarterId:qtr?qtr.id:null, ok: !!(subj&&qtr&&parsed.title)});
+  });
+  if(!rows.length){ showToast('Couldn\u2019t find any rows to import \u2014 check the format.', true); return; }
+  state.plannerImportPreview = rows;
+  render();
+}
+function doImportConfirm(){
+  var rows = (state.plannerImportPreview||[]).filter(function(r){return r.ok;});
+  if(!rows.length) return;
+  mutateAndSave(function(){
+    rows.forEach(function(r){
+      state.data.lessons.push({id:uid('lsn'), studentId:state.activeStudentId, subjectId:r.subjectId, quarterId:r.quarterId, title:r.title, status:'todo', possible:null, actual:null, date:todayStr(), notes:''});
+    });
+    state.plannerImportOpen=false; state.plannerImportPreview=null; state.plannerImportRawText='';
+  });
+  showToast(rows.length+' lesson'+(rows.length===1?'':'s')+' added to To Do.');
+}
+
+function doLessonStatusChange(id, newStatus){
+  var l = state.data.lessons.find(function(x){return x.id===id;});
+  if(!l) return;
+  if(newStatus==='done' && (l.possible==null || l.actual==null)){
+    state.view='grades'; state.activeStudentId=l.studentId; state.gradesMode='existing'; state.gradesSelectedLessonId=id;
+    render();
+    showToast('Add a score to mark this Done.');
+    return;
+  }
+  mutateAndSave(function(){ l.status = newStatus; });
+}
+
+function doLessonSaveEdit(id){
+  var l = state.data.lessons.find(function(x){return x.id===id;});
+  if(!l) return;
+  var titleInp = el('edit-title-'+id), possInp = el('edit-possible-'+id), actInp = el('edit-actual-'+id);
+  var subjSel = el('edit-subject-'+id), qSel = el('edit-quarter-'+id);
+  mutateAndSave(function(){
+    if(titleInp) l.title = titleInp.value.trim() || l.title;
+    if(subjSel) l.subjectId = subjSel.value;
+    if(qSel) l.quarterId = qSel.value;
+    if(possInp) l.possible = possInp.value===''? null : Number(possInp.value);
+    if(actInp) l.actual = actInp.value===''? null : Number(actInp.value);
+    if(l.possible!=null && l.actual!=null && l.status!=='done'){ l.status='done'; }
+    state.editingLessonId = null;
+  });
+  showToast('Saved.');
+}
+
+function doGradesSubmitNew(){
+  var subjSel = el('gr-subject'), qSel = el('gr-quarter'), titleInp = el('gr-title'), possInp = el('gr-possible'), actInp = el('gr-actual');
+  if(!subjSel) return;
+  var title = titleInp.value.trim();
+  var possible = possInp.value===''?null:Number(possInp.value);
+  var actual = actInp.value===''?null:Number(actInp.value);
+  if(!title){ showToast('Give the assignment a title.', true); return; }
+  if(possible==null || actual==null){ showToast('Enter both possible and actual points.', true); return; }
+  mutateAndSave(function(){
+    state.data.lessons.push({
+      id: uid('lsn'), studentId: state.activeStudentId, subjectId: subjSel.value, quarterId: qSel.value,
+      title: title, status:'done', possible: possible, actual: actual, date: todayStr(), notes:''
+    });
+  });
+  showToast('Grade saved.');
+}
+
+function doGradesSubmitExisting(id){
+  var l = state.data.lessons.find(function(x){return x.id===id;});
+  if(!l) return;
+  var possInp = el('gr-ex-possible'), actInp = el('gr-ex-actual');
+  var possible = possInp.value===''?null:Number(possInp.value);
+  var actual = actInp.value===''?null:Number(actInp.value);
+  if(possible==null || actual==null){ showToast('Enter both possible and actual points.', true); return; }
+  mutateAndSave(function(){
+    l.possible = possible; l.actual = actual; l.status='done';
+    state.gradesSelectedLessonId='';
+  });
+  showToast('Grade saved.');
+}
+
+function csvSafe(s){
+  s = String(s==null?'':s);
+  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+function doExportReportCsv(studentId){
+  var student = getStudent(studentId);
+  if(!student) return;
+  var subs = studentSubjects(studentId);
+  var quarters = yearQuarters(state.data.activeYearId);
+  var lines = [['Course'].concat(quarters.map(function(q){return q.name+' %';})).concat(quarters.map(function(q){return q.name+' Grade';})).concat(['Cumulative %','Cumulative Grade','GPA']).join(',')];
+  subs.forEach(function(su){
+    var row = [csvSafe(su.name)];
+    var pcts=[], letters=[];
+    quarters.forEach(function(q){
+      var agg = quarterAggregate(studentId, su.id, q.id);
+      pcts.push(agg?agg.pct.toFixed(1):''); letters.push(agg?agg.letter:'');
+    });
+    var cum = cumulativeAggregate(studentId, su.id);
+    row = row.concat(pcts).concat(letters).concat([cum?cum.pct.toFixed(1):'', cum?cum.letter:'', (cum&&cum.gpa!=null)?cum.gpa.toFixed(1):'']);
+    lines.push(row.join(','));
+  });
+  var blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = student.name.replace(/\s+/g,'_')+'_progress_report.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function doStudentAdd(){
+  mutateAndSave(function(){
+    var color = COLOR_NAMES[state.data.students.length % COLOR_NAMES.length];
+    var s = {id:uid('s'), name:'New student', color:color, gradeLevel:'', dob:''};
+    state.data.students.push(s);
+    state.data.studentYearInfo.push({id:uid('syi'), studentId:s.id, yearId:state.data.activeYearId, gradeLabel:''});
+    state.activeStudentId = s.id; state.reportStudentId = s.id; state.transcriptStudentId = s.id;
+  });
+}
+function doStudentSave(id){
+  var s = getStudent(id); if(!s) return;
+  var nameInp = el('s-name-'+id), dobInp = el('s-dob-'+id);
+  mutateAndSave(function(){
+    if(nameInp && nameInp.value.trim()) s.name = nameInp.value.trim();
+    if(dobInp) s.dob = dobInp.value;
+  });
+  showToast('Saved.');
+}
+function doStudentCycleColor(id){
+  var s = getStudent(id); if(!s) return;
+  mutateAndSave(function(){
+    var idx = COLOR_NAMES.indexOf(s.color);
+    s.color = COLOR_NAMES[(idx+1) % COLOR_NAMES.length];
+  });
+}
+
+/* ---- Years ---- */
+function doYearAddSubmit(){
+  var labelInp = el('new-year-label'), modeSel = el('new-year-mode');
+  var label = labelInp.value.trim();
+  if(!label){ showToast('Give the year a label.', true); return; }
+  var mode = modeSel.value;
+  mutateAndSave(function(){
+    var years2 = sortedYears();
+    var prevYear = years2.length ? years2[years2.length-1] : null;
+    var maxOrder = years2.reduce(function(m,y){return Math.max(m,y.order);},0);
+    var yid = uid('yr');
+    state.data.years.push({id:yid, label:label, mode:mode, order:maxOrder+1});
+    if(mode==='tracked'){
+      ['Quarter 1','Quarter 2','Quarter 3','Quarter 4'].forEach(function(qn){
+        state.data.quarters.push({id:uid('q'), yearId:yid, name:qn, start:'', end:''});
+      });
+    }
+    state.data.students.forEach(function(s){
+      var guess = prevYear ? nextGradeLabel(gradeLabelFor(s.id, prevYear.id)) : '';
+      state.data.studentYearInfo.push({id:uid('syi'), studentId:s.id, yearId:yid, gradeLabel:guess});
+    });
+    state.addingYear = false;
+    state.subjectsYearId = yid;
+  });
+  showToast('Year created.');
+}
+function doYearSave(id){
+  var y = getYear(id); if(!y) return;
+  var labelInp = el('yr-label-'+id);
+  mutateAndSave(function(){
+    if(labelInp && labelInp.value.trim()) y.label = labelInp.value.trim();
+  });
+  showToast('Saved.');
+}
+function doYearSetActive(id){
+  mutateAndSave(function(){
+    state.data.activeYearId = id;
+    state.activeStudentId = state.data.students.length? state.data.students[0].id : null;
+  });
+  showToast('Active year switched.');
+}
+function doStudentYearSave(studentId){
+  var inp = el('syi-'+studentId);
+  if(!inp) return;
+  mutateAndSave(function(){
+    var rec = getStudentYearInfo(studentId, state.data.activeYearId);
+    if(rec){ rec.gradeLabel = inp.value.trim(); }
+    else { state.data.studentYearInfo.push({id:uid('syi'), studentId:studentId, yearId:state.data.activeYearId, gradeLabel:inp.value.trim()}); }
+  });
+  showToast('Saved.');
+}
+
+function doQuarterAdd(){ mutateAndSave(function(){ state.data.quarters.push({id:uid('q'), yearId:state.data.activeYearId, name:'New Quarter', start:'', end:''}); }); }
+function doQuarterSave(id){
+  var q = getQuarter(id); if(!q) return;
+  var n = el('q-name-'+id), st = el('q-start-'+id), en = el('q-end-'+id);
+  mutateAndSave(function(){
+    if(n && n.value.trim()) q.name = n.value.trim();
+    if(st) q.start = st.value;
+    if(en) q.end = en.value;
+  });
+  showToast('Saved.');
+}
+
+/* ---- Subjects & carry-forward ---- */
+function doSubjectAdd(studentId, yearId){
+  var inp = el('new-subject-'+studentId);
+  var name = inp ? inp.value.trim() : '';
+  if(!name){ showToast('Enter a subject name first.', true); return; }
+  mutateAndSave(function(){
+    state.data.subjects.push({id:uid('sub'), studentId:studentId, yearId:yearId||state.data.activeYearId, name:name, unitLabel:null, targetTotal:null, creditHours:1, category:''});
+  });
+}
+function doSubjectSave(id){
+  var su = getSubject(id); if(!su) return;
+  var n = el('su-name-'+id), tgt = el('su-target-'+id), unit = el('su-unit-'+id), cred = el('su-credit-'+id), cat = el('su-cat-'+id);
+  mutateAndSave(function(){
+    if(n && n.value.trim()) su.name = n.value.trim();
+    su.targetTotal = (tgt && tgt.value!=='') ? Number(tgt.value) : null;
+    su.unitLabel = unit ? (unit.value.trim()||null) : null;
+    su.creditHours = (cred && cred.value!=='') ? Number(cred.value) : 1;
+    su.category = cat ? cat.value.trim() : '';
+  });
+  showToast('Saved.');
+}
+function doCarryForwardSubmit(studentId, fromYearId, toYearId){
+  var prevSubs = studentSubjectsForYear(studentId, fromYearId);
+  var toCarry = prevSubs.filter(function(ps){ return state.carryForwardChecked[studentId+':'+ps.id]; });
+  if(!toCarry.length){ showToast('Check at least one subject to carry forward.', true); return; }
+  mutateAndSave(function(){
+    toCarry.forEach(function(ps){
+      state.data.subjects.push({id:uid('sub'), studentId:studentId, yearId:toYearId, name:ps.name, unitLabel:ps.unitLabel, targetTotal:ps.targetTotal, creditHours:ps.creditHours, category:ps.category||''});
+      delete state.carryForwardChecked[studentId+':'+ps.id];
+    });
+  });
+  showToast(toCarry.length+' subject'+(toCarry.length===1?'':'s')+' carried forward.');
+}
+
+/* ---- Historical transcript rows ---- */
+function doHistAddSubmit(yearId, studentId){
+  var typeInp = el('hist-new-type'), titleInp = el('hist-new-title'), pctInp = el('hist-new-pct'), credInp = el('hist-new-credit');
+  var title = titleInp.value.trim();
+  var pct = pctInp.value===''?null:Number(pctInp.value);
+  var credit = credInp.value===''?1:Number(credInp.value);
+  if(!title || pct==null){ showToast('Enter a course title and grade %.', true); return; }
+  mutateAndSave(function(){
+    state.data.historicalCourses.push({id:uid('hc'), yearId:yearId, studentId:studentId, type:typeInp.value.trim(), title:title, gradePct:pct, credit:credit});
+    state.addingHistYearFor = null;
+  });
+  showToast('Course added.');
+}
+function doHistEditSave(id){
+  var h = state.data.historicalCourses.find(function(x){return x.id===id;});
+  if(!h) return;
+  var typeInp = el('hist-edit-type-'+id), titleInp = el('hist-edit-title-'+id), pctInp = el('hist-edit-pct-'+id), credInp = el('hist-edit-credit-'+id);
+  mutateAndSave(function(){
+    if(typeInp) h.type = typeInp.value.trim();
+    if(titleInp && titleInp.value.trim()) h.title = titleInp.value.trim();
+    if(pctInp && pctInp.value!=='') h.gradePct = Number(pctInp.value);
+    if(credInp && credInp.value!=='') h.credit = Number(credInp.value);
+    state.editingHistRowId = null;
+  });
+  showToast('Saved.');
+}
+
+function doScaleAdd(){ mutateAndSave(function(){ state.data.scale.push({id:uid('g'), letter:'?', min:0, gpa:0}); }); }
+function doScaleSaveAll(){
+  mutateAndSave(function(){
+    state.data.scale.forEach(function(b){
+      var l = el('sc-letter-'+b.id), m = el('sc-min-'+b.id), g = el('sc-gpa-'+b.id);
+      if(l && l.value.trim()) b.letter = l.value.trim();
+      if(m && m.value!=='') b.min = Number(m.value);
+      if(g && g.value!=='') b.gpa = Number(g.value);
+    });
+  });
+  showToast('Grading scale saved.');
+}
+
+function doSchoolSave(){
+  mutateAndSave(function(){
+    state.data.school = {
+      name: el('sch-name').value.trim(), authority: el('sch-authority').value.trim(),
+      administrator: el('sch-administrator').value.trim(), principal: el('sch-principal').value.trim(),
+      county: el('sch-county').value.trim(), schoolId: el('sch-schoolid').value.trim(),
+      address: el('sch-address').value.trim(), phone: el('sch-phone').value.trim()
+    };
+  });
+  showToast('School info saved.');
+}
+
+function doDataExport(){
+  var blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'homeroom_backup_'+todayStr()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function doConfirmDelete(key){
+  if(state.confirmArmed !== key){ state.confirmArmed = key; render(); return; }
+  state.confirmArmed = null;
+  var parts = key.split(':');
+  var type = parts[0], id = parts.slice(1).join(':');
+
+  if(type==='lesson'){
+    mutateAndSave(function(){
+      state.data.lessons = state.data.lessons.filter(function(l){return l.id!==id;});
+      if(state.editingLessonId===id) state.editingLessonId=null;
+      if(state.gradesSelectedLessonId===id) state.gradesSelectedLessonId='';
+    });
+    showToast('Lesson deleted.');
+  } else if(type==='student'){
+    mutateAndSave(function(){
+      state.data.students = state.data.students.filter(function(s){return s.id!==id;});
+      state.data.subjects = state.data.subjects.filter(function(s){return s.studentId!==id;});
+      state.data.lessons = state.data.lessons.filter(function(l){return l.studentId!==id;});
+      state.data.studentYearInfo = state.data.studentYearInfo.filter(function(r){return r.studentId!==id;});
+      state.data.historicalCourses = state.data.historicalCourses.filter(function(h){return h.studentId!==id;});
+      if(state.activeStudentId===id) state.activeStudentId = state.data.students.length? state.data.students[0].id : null;
+      if(state.reportStudentId===id) state.reportStudentId = state.data.students.length? state.data.students[0].id : null;
+      if(state.transcriptStudentId===id) state.transcriptStudentId = state.data.students.length? state.data.students[0].id : null;
+    });
+    showToast('Student removed.');
+  } else if(type==='quarter'){
+    if(state.data.lessons.some(function(l){return l.quarterId===id;})){
+      render(); showToast('That quarter has lessons in it \u2014 move or delete those first.', true); return;
+    }
+    mutateAndSave(function(){ state.data.quarters = state.data.quarters.filter(function(q){return q.id!==id;}); });
+    showToast('Quarter removed.');
+  } else if(type==='subject'){
+    if(state.data.lessons.some(function(l){return l.subjectId===id;})){
+      render(); showToast('That subject has graded work \u2014 remove those lessons first.', true); return;
+    }
+    mutateAndSave(function(){ state.data.subjects = state.data.subjects.filter(function(s){return s.id!==id;}); });
+    showToast('Subject removed.');
+  } else if(type==='scale'){
+    if(state.data.scale.length<=1){ render(); showToast('Keep at least one grade band.', true); return; }
+    mutateAndSave(function(){ state.data.scale = state.data.scale.filter(function(b){return b.id!==id;}); });
+  } else if(type==='year'){
+    if(id===state.data.activeYearId){ render(); showToast('Set a different year as active before deleting this one.', true); return; }
+    var hasData = state.data.subjects.some(function(s){return s.yearId===id;}) || state.data.historicalCourses.some(function(h){return h.yearId===id;});
+    if(hasData){ render(); showToast('That year still has courses in it \u2014 remove those first.', true); return; }
+    mutateAndSave(function(){
+      state.data.years = state.data.years.filter(function(y){return y.id!==id;});
+      state.data.quarters = state.data.quarters.filter(function(q){return q.yearId!==id;});
+      state.data.studentYearInfo = state.data.studentYearInfo.filter(function(r){return r.yearId!==id;});
+    });
+    showToast('Year removed.');
+  } else if(type==='hist'){
+    mutateAndSave(function(){
+      state.data.historicalCourses = state.data.historicalCourses.filter(function(h){return h.id!==id;});
+      if(state.editingHistRowId===id) state.editingHistRowId=null;
+    });
+    showToast('Course removed.');
+  } else if(type==='reset'){
+    mutateAndSave(function(){ state.data = defaultData(); state.activeStudentId=null; state.reportStudentId=null; state.transcriptStudentId=null; });
+    showToast('All data reset.');
+  }
+}
+
+
+/* ---------------- init ---------------- */
+loadData();
+
+})();
+
+</script>
+</body>
+</html>
