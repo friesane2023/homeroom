@@ -1205,7 +1205,7 @@ function renderSetupSubjects(){
     return '<div style="margin-bottom:18px;"><div class="eyebrow" style="color:var(--'+s.color+');">'+esc(s.name)+'</div>'+
       carry+
       (rows || '<p class="helptext">No subjects yet for this year.</p>')+
-      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><input type="text" id="new-subject-'+s.id+'" placeholder="New subject name" style="max-width:200px;">'+
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><input type="text" id="new-subject-'+s.id+'" placeholder="New subject name" style="flex:1 1 200px;min-width:150px;max-width:200px;">'+
       '<button class="btn btn-sm" data-action="subject-add" data-student="'+s.id+'" data-year="'+selYearId+'">'+icon('plus')+' Add subject</button></div></div>';
   }).join('');
 
