@@ -549,10 +549,8 @@ function renderStudentTabs(){
 }
 
 function renderNoStudentsEmpty(){
-  return '<div class="empty-state"><h3>Welcome to Homeroom</h3>'+
-    '<p>A lesson planner and gradebook for homeschool families \u2014 add each learner in Setup, then plan lessons on a To Do / In Progress / Needs Review / Done board, record grades, and print a progress report or transcript when you need one.</p>'+
-    '<p style="margin-top:-8px;">Everything you enter is saved right in this browser \u2014 nothing is sent anywhere else.</p>'+
-    '<button class="btn btn-primary" data-action="switch-view" data-view="setup">'+icon('plus')+' Add your first student</button></div>';
+  return '<div class="empty-state"><h3>No learners set up yet</h3><p>Add your students in Setup to start planning lessons and tracking grades.</p>'+
+    '<button class="btn btn-primary" data-action="switch-view" data-view="setup">'+icon('plus')+' Go to Setup</button></div>';
 }
 
 function render(){
@@ -945,12 +943,12 @@ function renderHistAddForm(y, studentId){
 function renderHistEditRow(h){
   return '<div class="inline-edit" style="border-top:none;padding-top:0;">'+
     '<div class="field-row">'+
-      '<div class="field"><label class="field-label">Type</label><input type="text" id="hist-edit-type-'+h.id+'" value="'+esc(h.type||'')+'"></div>'+
-      '<div class="field"><label class="field-label">Course title</label><input type="text" id="hist-edit-title-'+h.id+'" value="'+esc(h.title)+'"></div>'+
-      '<div class="field"><label class="field-label">Grade %</label><input type="number" step="any" id="hist-edit-pct-'+h.id+'" value="'+h.gradePct+'"></div>'+
-      '<div class="field"><label class="field-label">Credit</label><input type="number" step="0.5" id="hist-edit-credit-'+h.id+'" value="'+h.credit+'"></div>'+
+      '<div class="field"><label class="field-label">Type</label><input type="text" value="'+esc(h.type||'')+'" '+bindAttrs('hist',h.id,'type')+'></div>'+
+      '<div class="field"><label class="field-label">Course title</label><input type="text" value="'+esc(h.title)+'" '+bindAttrs('hist',h.id,'title')+'></div>'+
+      '<div class="field"><label class="field-label">Grade %</label><input type="number" step="any" value="'+h.gradePct+'" '+bindAttrs('hist',h.id,'gradePct')+'></div>'+
+      '<div class="field"><label class="field-label">Credit</label><input type="number" step="0.5" value="'+h.credit+'" '+bindAttrs('hist',h.id,'credit')+'></div>'+
     '</div>'+
-    '<div class="btn-row"><button class="btn" data-action="hist-edit-toggle" data-id="'+h.id+'">Cancel</button><button class="btn btn-primary" data-action="hist-edit-save" data-id="'+h.id+'">Save</button></div>'+
+    '<div class="btn-row"><button class="btn btn-primary" data-action="hist-edit-toggle" data-id="'+h.id+'">Done</button></div>'+
   '</div>';
 }
 
@@ -1074,15 +1072,18 @@ function renderSetup(){
     '<div class="panel">'+body+'</div>';
 }
 
+function bindAttrs(coll, id, field){
+  return 'data-bind-collection="'+coll+'" data-bind-id="'+esc(id)+'" data-bind-field="'+field+'"';
+}
+
 function renderSetupYears(){
   var years = sortedYears();
   var rows = years.map(function(y){
     var isActive = y.id===state.data.activeYearId;
     return '<div class="row-item">'+
-      '<input type="text" class="grow" id="yr-label-'+y.id+'" value="'+esc(y.label)+'" style="max-width:160px;">'+
+      '<input type="text" class="grow" value="'+esc(y.label)+'" style="max-width:160px;" '+bindAttrs('years',y.id,'label')+'>'+
       '<span class="pill">'+(y.mode==='tracked'?'Tracked':'Historical')+'</span>'+
       (isActive ? '<span class="pill" style="background:var(--pine-soft);color:var(--pine);">Active</span>' : '<button class="btn btn-sm" data-action="year-set-active" data-id="'+y.id+'">Set active</button>')+
-      '<button class="btn btn-sm" data-action="year-save" data-id="'+y.id+'">Save</button>'+
       renderDeleteIconBtn('year:'+y.id)+
     '</div>';
   }).join('');
@@ -1093,8 +1094,7 @@ function renderSetupYears(){
       state.data.students.map(function(s){
         var val = gradeLabelFor(s.id, state.data.activeYearId);
         return '<div class="row-item"><span class="grow">'+esc(s.name)+'</span>'+
-          '<input type="text" id="syi-'+s.id+'" value="'+esc(val)+'" placeholder="e.g. 11th Grade" style="max-width:160px;">'+
-          '<button class="btn btn-sm" data-action="studentyear-save" data-id="'+s.id+'">Save</button></div>';
+          '<input type="text" value="'+esc(val)+'" placeholder="e.g. 11th Grade" style="max-width:160px;" '+bindAttrs('studentYear',s.id,'gradeLabel')+'></div>';
       }).join('');
   }
 
@@ -1108,7 +1108,7 @@ function renderSetupYears(){
     '</div>'
   ) : '<button class="btn btn-primary" style="margin-top:14px;" data-action="year-add-open">'+icon('plus')+' Add school year</button>';
 
-  return '<div class="eyebrow">School years</div><p class="helptext">The active year is what Planner, Grades, and Dashboard show. Add a new year when you\u2019re ready to move into it \u2014 last year stays exactly as it was, and both show up on the Transcript.</p>'+
+  return '<div class="eyebrow">School years</div><p class="helptext">Changes save automatically as you type. The active year is what Planner, Grades, and Dashboard show \u2014 add a new year when you\u2019re ready to move into it; last year stays exactly as it was, and both show up on the Transcript.</p>'+
     rows + studentGradeRows + addForm;
 }
 
@@ -1116,13 +1116,12 @@ function renderSetupStudents(){
   var rows = state.data.students.map(function(s){
     return '<div class="row-item">'+
       '<span class="swatch" style="background:var(--'+s.color+')" title="Click to change color" data-action="student-color" data-id="'+s.id+'"></span>'+
-      '<input type="text" class="grow" id="s-name-'+s.id+'" value="'+esc(s.name)+'" placeholder="Name" style="max-width:170px;">'+
-      '<input type="date" id="s-dob-'+s.id+'" value="'+esc(s.dob||'')+'" title="Date of birth">'+
-      '<button class="btn btn-sm" data-action="student-save" data-id="'+s.id+'">Save</button>'+
+      '<input type="text" class="grow" value="'+esc(s.name)+'" placeholder="Name" style="max-width:170px;" '+bindAttrs('students',s.id,'name')+'>'+
+      '<input type="date" value="'+esc(s.dob||'')+'" title="Date of birth" '+bindAttrs('students',s.id,'dob')+'>'+
       renderDeleteIconBtn('student:'+s.id)+
     '</div>';
   }).join('');
-  return '<div class="eyebrow">Learners</div><p class="helptext">Grade level is set per school year now \u2014 see the Years tab.</p>'+
+  return '<div class="eyebrow">Learners</div><p class="helptext">Changes save automatically as you type. Grade level is set per school year \u2014 see the Years tab.</p>'+
     (rows || '<p class="helptext">No students yet.</p>')+
     '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="student-add">'+icon('plus')+' Add student</button></div>';
 }
@@ -1132,15 +1131,14 @@ function renderSetupQuarters(){
   var qs = yearQuarters(yr.id);
   var rows = qs.map(function(q){
     return '<div class="row-item">'+
-      '<input type="text" class="grow" id="q-name-'+q.id+'" value="'+esc(q.name)+'" style="max-width:160px;">'+
-      '<input type="date" id="q-start-'+q.id+'" value="'+esc(q.start||'')+'">'+
+      '<input type="text" class="grow" value="'+esc(q.name)+'" style="max-width:160px;" '+bindAttrs('quarters',q.id,'name')+'>'+
+      '<input type="date" value="'+esc(q.start||'')+'" '+bindAttrs('quarters',q.id,'start')+'>'+
       '<span class="helptext">to</span>'+
-      '<input type="date" id="q-end-'+q.id+'" value="'+esc(q.end||'')+'">'+
-      '<button class="btn btn-sm" data-action="quarter-save" data-id="'+q.id+'">Save</button>'+
+      '<input type="date" value="'+esc(q.end||'')+'" '+bindAttrs('quarters',q.id,'end')+'>'+
       renderDeleteIconBtn('quarter:'+q.id)+
     '</div>';
   }).join('');
-  return '<div class="eyebrow">Terms \u2014 '+esc(yr.label)+'</div><p class="helptext">Dates are just for your reference \u2014 you pick the quarter directly when you plan or grade a lesson, so nothing falls into a gap between terms.</p>'+
+  return '<div class="eyebrow">Terms \u2014 '+esc(yr.label)+'</div><p class="helptext">Changes save automatically. Dates are just for your reference \u2014 you pick the quarter directly when you plan or grade a lesson, so nothing falls into a gap between terms.</p>'+
     (rows || '<p class="helptext">This year has no quarters (it may be historical).</p>')+
     '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="quarter-add">'+icon('plus')+' Add quarter</button></div>';
 }
@@ -1166,12 +1164,11 @@ function renderSetupSubjects(){
     var subs = studentSubjectsForYear(s.id, selYearId);
     var rows = subs.map(function(su){
       return '<div class="row-item">'+
-        '<input type="text" class="grow" id="su-name-'+su.id+'" value="'+esc(su.name)+'" placeholder="Subject">'+
-        '<input type="text" id="su-cat-'+su.id+'" value="'+esc(su.category||'')+'" placeholder="Category" style="max-width:100px;" title="e.g. Math, English, Elective">'+
-        '<input type="number" step="0.5" id="su-credit-'+su.id+'" value="'+(su.creditHours!=null?su.creditHours:1)+'" style="max-width:70px;" title="Credit hours">'+
-        '<input type="number" step="1" id="su-target-'+su.id+'" value="'+(su.targetTotal!=null?su.targetTotal:'')+'" placeholder="Target #" style="max-width:85px;">'+
-        '<input type="text" id="su-unit-'+su.id+'" value="'+esc(su.unitLabel||'')+'" placeholder="Unit" style="max-width:85px;">'+
-        '<button class="btn btn-sm" data-action="subject-save" data-id="'+su.id+'">Save</button>'+
+        '<input type="text" class="grow" value="'+esc(su.name)+'" placeholder="Subject" '+bindAttrs('subjects',su.id,'name')+'>'+
+        '<input type="text" value="'+esc(su.category||'')+'" placeholder="Category" style="max-width:100px;" title="e.g. Math, English, Elective" '+bindAttrs('subjects',su.id,'category')+'>'+
+        '<input type="number" step="0.5" value="'+(su.creditHours!=null?su.creditHours:1)+'" style="max-width:70px;" title="Credit hours" '+bindAttrs('subjects',su.id,'creditHours')+'>'+
+        '<input type="number" step="1" value="'+(su.targetTotal!=null?su.targetTotal:'')+'" placeholder="Target #" style="max-width:85px;" '+bindAttrs('subjects',su.id,'targetTotal')+'>'+
+        '<input type="text" value="'+esc(su.unitLabel||'')+'" placeholder="Unit" style="max-width:85px;" '+bindAttrs('subjects',su.id,'unitLabel')+'>'+
         renderDeleteIconBtn('subject:'+su.id)+
       '</div>';
     }).join('');
@@ -1203,47 +1200,44 @@ function renderSetupSubjects(){
       '<button class="btn btn-sm" data-action="subject-add" data-student="'+s.id+'" data-year="'+selYearId+'">'+icon('plus')+' Add subject</button></div></div>';
   }).join('');
 
-  return yearSelect + body;
+  return yearSelect + '<p class="helptext" style="margin-top:-10px;margin-bottom:14px;">Changes to existing subjects save automatically.</p>' + body;
 }
 
 function renderSetupScale(){
   var rows = state.data.scale.slice().sort(function(a,b){return b.min-a.min;}).map(function(b){
     return '<div class="row-item">'+
-      '<input type="text" id="sc-letter-'+b.id+'" value="'+esc(b.letter)+'" style="max-width:64px;">'+
-      '<span class="helptext">min %</span><input type="number" step="any" id="sc-min-'+b.id+'" value="'+b.min+'" style="max-width:90px;">'+
-      '<span class="helptext">GPA</span><input type="number" step="0.1" id="sc-gpa-'+b.id+'" value="'+b.gpa+'" style="max-width:90px;">'+
+      '<input type="text" value="'+esc(b.letter)+'" style="max-width:64px;" '+bindAttrs('scale',b.id,'letter')+'>'+
+      '<span class="helptext">min %</span><input type="number" step="any" value="'+b.min+'" style="max-width:90px;" '+bindAttrs('scale',b.id,'min')+'>'+
+      '<span class="helptext">GPA</span><input type="number" step="0.1" value="'+b.gpa+'" style="max-width:90px;" '+bindAttrs('scale',b.id,'gpa')+'>'+
       renderDeleteIconBtn('scale:'+b.id)+
     '</div>';
   }).join('');
-  return '<div class="eyebrow">Grading scale</div><p class="helptext">A score gets the highest band whose minimum percent it meets or beats. Used for report cards and the transcript alike. Edit values, then Save.</p>'+
+  return '<div class="eyebrow">Grading scale</div><p class="helptext">A score gets the highest band whose minimum percent it meets or beats. Used for report cards and the transcript alike. Changes save automatically.</p>'+
     rows+
-    '<div style="margin-top:14px;display:flex;gap:8px;">'+
-      '<button class="btn" data-action="scale-add">'+icon('plus')+' Add band</button>'+
-      '<button class="btn btn-primary" data-action="scale-save-all">Save scale</button>'+
-    '</div>';
+    '<div style="margin-top:14px;"><button class="btn" data-action="scale-add">'+icon('plus')+' Add band</button></div>';
 }
 
 function renderSetupSchool(){
   var sch = state.data.school || {};
-  var f = function(id,label,val){
-    return '<div class="field"><label class="field-label">'+label+'</label><input type="text" id="'+id+'" value="'+esc(val||'')+'"></div>';
+  var f = function(field,label,val){
+    return '<div class="field"><label class="field-label">'+label+'</label><input type="text" value="'+esc(val||'')+'" '+bindAttrs('school',null,field)+'></div>';
   };
-  return '<div class="eyebrow">School / program info</div><p class="helptext">Fills in the header of your printable progress report and transcript.</p>'+
-    '<div class="field-row">'+f('sch-name','School name',sch.name)+f('sch-authority','Reporting authority',sch.authority)+'</div>'+
-    '<div class="field-row">'+f('sch-administrator','Administrator',sch.administrator)+f('sch-principal','Principal',sch.principal)+'</div>'+
-    '<div class="field-row">'+f('sch-county','County',sch.county)+f('sch-schoolid','School ID',sch.schoolId)+'</div>'+
-    '<div class="field-row">'+f('sch-address','Address',sch.address)+f('sch-phone','Phone',sch.phone)+'</div>'+
-    '<button class="btn btn-primary" data-action="school-save">Save school info</button>';
+  return '<div class="eyebrow">School / program info</div><p class="helptext">Fills in the header of your printable progress report and transcript. Changes save automatically.</p>'+
+    '<div class="field-row">'+f('name','School name',sch.name)+f('authority','Reporting authority',sch.authority)+'</div>'+
+    '<div class="field-row">'+f('administrator','Administrator',sch.administrator)+f('principal','Principal',sch.principal)+'</div>'+
+    '<div class="field-row">'+f('county','County',sch.county)+f('schoolId','School ID',sch.schoolId)+'</div>'+
+    '<div class="field-row">'+f('address','Address',sch.address)+f('phone','Phone',sch.phone)+'</div>';
 }
 
 function renderSetupData(){
   return '<div class="eyebrow">Your data</div>'+
-    '<p class="helptext">Everything saves automatically to your Claude account as you go. Use these if you want a backup or a fresh start.</p>'+
+    '<p class="helptext">Everything saves automatically as you go. Use these if you want a backup or a fresh start.</p>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">'+
       '<button class="btn" data-action="data-export">'+icon('download')+' Export all data (JSON)</button>'+
       '<button class="btn btn-danger'+(state.confirmArmed==='reset:all'?' armed':'')+'" data-action="confirm-delete" data-key="reset:all">'+(state.confirmArmed==='reset:all'?'Click again to erase everything':'Reset all data')+'</button>'+
     '</div>';
 }
+
 
 
 /* =========================================================
@@ -1297,38 +1291,68 @@ document.addEventListener('click', function(e){
     'report-export-csv': function(){ doExportReportCsv(id); },
 
     'student-add': doStudentAdd,
-    'student-save': function(){ doStudentSave(id); },
     'student-color': function(){ doStudentCycleColor(id); },
 
     'year-add-open': function(){ state.addingYear = true; render(); },
     'year-add-cancel': function(){ state.addingYear = false; render(); },
     'year-add-submit': doYearAddSubmit,
-    'year-save': function(){ doYearSave(id); },
     'year-set-active': function(){ doYearSetActive(id); },
-    'studentyear-save': function(){ doStudentYearSave(id); },
 
     'quarter-add': doQuarterAdd,
-    'quarter-save': function(){ doQuarterSave(id); },
 
     'subject-add': function(){ doSubjectAdd(t.getAttribute('data-student'), t.getAttribute('data-year')); },
-    'subject-save': function(){ doSubjectSave(id); },
     'carry-forward-submit': function(){ doCarryForwardSubmit(t.getAttribute('data-student'), t.getAttribute('data-fromyear'), t.getAttribute('data-toyear')); },
 
     'hist-add-open': function(){ state.addingHistYearFor = t.getAttribute('data-year'); render(); },
     'hist-add-cancel': function(){ state.addingHistYearFor = null; render(); },
     'hist-add-submit': function(){ doHistAddSubmit(t.getAttribute('data-year'), t.getAttribute('data-student')); },
     'hist-edit-toggle': function(){ state.editingHistRowId = (state.editingHistRowId===id)?null:id; render(); },
-    'hist-edit-save': function(){ doHistEditSave(id); },
 
     'scale-add': doScaleAdd,
-    'scale-save-all': doScaleSaveAll,
 
-    'school-save': doSchoolSave,
     'data-export': doDataExport,
 
     'confirm-delete': function(){ doConfirmDelete(t.getAttribute('data-key')); }
   };
   if(handlers[action]) handlers[action]();
+});
+
+/* ---- generic auto-save field binding: any input with data-bind-collection saves on every keystroke ---- */
+var BIND_NUMBER_DEFAULTS = {creditHours:1, targetTotal:null, min:0, gpa:0, credit:1, gradePct:0};
+function bindLookup(coll, id){
+  if(coll==='students') return getStudent(id);
+  if(coll==='quarters') return getQuarter(id);
+  if(coll==='subjects') return getSubject(id);
+  if(coll==='years') return getYear(id);
+  if(coll==='scale') return state.data.scale.find(function(b){return b.id===id;});
+  if(coll==='hist') return state.data.historicalCourses.find(function(h){return h.id===id;});
+  return null;
+}
+document.addEventListener('input', function(e){
+  var t = e.target;
+  var coll = t.getAttribute('data-bind-collection');
+  if(!coll) return;
+  var id = t.getAttribute('data-bind-id');
+  var field = t.getAttribute('data-bind-field');
+  var raw = t.value;
+  var val = (field in BIND_NUMBER_DEFAULTS) ? (raw===''? BIND_NUMBER_DEFAULTS[field] : Number(raw)) : raw;
+
+  if(coll==='school'){
+    state.data.school[field] = val;
+    saveData();
+    return;
+  }
+  if(coll==='studentYear'){
+    var rec = getStudentYearInfo(id, state.data.activeYearId);
+    if(!rec){ rec = {id:uid('syi'), studentId:id, yearId:state.data.activeYearId, gradeLabel:''}; state.data.studentYearInfo.push(rec); }
+    rec[field] = val;
+    saveData();
+    return;
+  }
+  var target = bindLookup(coll, id);
+  if(!target) return;
+  target[field] = val;
+  saveData();
 });
 
 document.addEventListener('change', function(e){
@@ -1522,15 +1546,6 @@ function doStudentAdd(){
     state.activeStudentId = s.id; state.reportStudentId = s.id; state.transcriptStudentId = s.id;
   });
 }
-function doStudentSave(id){
-  var s = getStudent(id); if(!s) return;
-  var nameInp = el('s-name-'+id), dobInp = el('s-dob-'+id);
-  mutateAndSave(function(){
-    if(nameInp && nameInp.value.trim()) s.name = nameInp.value.trim();
-    if(dobInp) s.dob = dobInp.value;
-  });
-  showToast('Saved.');
-}
 function doStudentCycleColor(id){
   var s = getStudent(id); if(!s) return;
   mutateAndSave(function(){
@@ -1565,14 +1580,6 @@ function doYearAddSubmit(){
   });
   showToast('Year created.');
 }
-function doYearSave(id){
-  var y = getYear(id); if(!y) return;
-  var labelInp = el('yr-label-'+id);
-  mutateAndSave(function(){
-    if(labelInp && labelInp.value.trim()) y.label = labelInp.value.trim();
-  });
-  showToast('Saved.');
-}
 function doYearSetActive(id){
   mutateAndSave(function(){
     state.data.activeYearId = id;
@@ -1580,28 +1587,8 @@ function doYearSetActive(id){
   });
   showToast('Active year switched.');
 }
-function doStudentYearSave(studentId){
-  var inp = el('syi-'+studentId);
-  if(!inp) return;
-  mutateAndSave(function(){
-    var rec = getStudentYearInfo(studentId, state.data.activeYearId);
-    if(rec){ rec.gradeLabel = inp.value.trim(); }
-    else { state.data.studentYearInfo.push({id:uid('syi'), studentId:studentId, yearId:state.data.activeYearId, gradeLabel:inp.value.trim()}); }
-  });
-  showToast('Saved.');
-}
 
 function doQuarterAdd(){ mutateAndSave(function(){ state.data.quarters.push({id:uid('q'), yearId:state.data.activeYearId, name:'New Quarter', start:'', end:''}); }); }
-function doQuarterSave(id){
-  var q = getQuarter(id); if(!q) return;
-  var n = el('q-name-'+id), st = el('q-start-'+id), en = el('q-end-'+id);
-  mutateAndSave(function(){
-    if(n && n.value.trim()) q.name = n.value.trim();
-    if(st) q.start = st.value;
-    if(en) q.end = en.value;
-  });
-  showToast('Saved.');
-}
 
 /* ---- Subjects & carry-forward ---- */
 function doSubjectAdd(studentId, yearId){
@@ -1611,18 +1598,6 @@ function doSubjectAdd(studentId, yearId){
   mutateAndSave(function(){
     state.data.subjects.push({id:uid('sub'), studentId:studentId, yearId:yearId||state.data.activeYearId, name:name, unitLabel:null, targetTotal:null, creditHours:1, category:''});
   });
-}
-function doSubjectSave(id){
-  var su = getSubject(id); if(!su) return;
-  var n = el('su-name-'+id), tgt = el('su-target-'+id), unit = el('su-unit-'+id), cred = el('su-credit-'+id), cat = el('su-cat-'+id);
-  mutateAndSave(function(){
-    if(n && n.value.trim()) su.name = n.value.trim();
-    su.targetTotal = (tgt && tgt.value!=='') ? Number(tgt.value) : null;
-    su.unitLabel = unit ? (unit.value.trim()||null) : null;
-    su.creditHours = (cred && cred.value!=='') ? Number(cred.value) : 1;
-    su.category = cat ? cat.value.trim() : '';
-  });
-  showToast('Saved.');
 }
 function doCarryForwardSubmit(studentId, fromYearId, toYearId){
   var prevSubs = studentSubjectsForYear(studentId, fromYearId);
@@ -1650,44 +1625,8 @@ function doHistAddSubmit(yearId, studentId){
   });
   showToast('Course added.');
 }
-function doHistEditSave(id){
-  var h = state.data.historicalCourses.find(function(x){return x.id===id;});
-  if(!h) return;
-  var typeInp = el('hist-edit-type-'+id), titleInp = el('hist-edit-title-'+id), pctInp = el('hist-edit-pct-'+id), credInp = el('hist-edit-credit-'+id);
-  mutateAndSave(function(){
-    if(typeInp) h.type = typeInp.value.trim();
-    if(titleInp && titleInp.value.trim()) h.title = titleInp.value.trim();
-    if(pctInp && pctInp.value!=='') h.gradePct = Number(pctInp.value);
-    if(credInp && credInp.value!=='') h.credit = Number(credInp.value);
-    state.editingHistRowId = null;
-  });
-  showToast('Saved.');
-}
 
 function doScaleAdd(){ mutateAndSave(function(){ state.data.scale.push({id:uid('g'), letter:'?', min:0, gpa:0}); }); }
-function doScaleSaveAll(){
-  mutateAndSave(function(){
-    state.data.scale.forEach(function(b){
-      var l = el('sc-letter-'+b.id), m = el('sc-min-'+b.id), g = el('sc-gpa-'+b.id);
-      if(l && l.value.trim()) b.letter = l.value.trim();
-      if(m && m.value!=='') b.min = Number(m.value);
-      if(g && g.value!=='') b.gpa = Number(g.value);
-    });
-  });
-  showToast('Grading scale saved.');
-}
-
-function doSchoolSave(){
-  mutateAndSave(function(){
-    state.data.school = {
-      name: el('sch-name').value.trim(), authority: el('sch-authority').value.trim(),
-      administrator: el('sch-administrator').value.trim(), principal: el('sch-principal').value.trim(),
-      county: el('sch-county').value.trim(), schoolId: el('sch-schoolid').value.trim(),
-      address: el('sch-address').value.trim(), phone: el('sch-phone').value.trim()
-    };
-  });
-  showToast('School info saved.');
-}
 
 function doDataExport(){
   var blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
