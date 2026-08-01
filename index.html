@@ -220,6 +220,9 @@
   .row-item{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--rule); }
   .row-item:last-child{ border-bottom:none; }
   .row-item .grow{ flex:1; }
+  .row-item input[type=text], .row-item input[type=number]{ width:auto; flex:1 1 110px; min-width:70px; }
+  .row-item input.grow{ flex:2 1 160px; }
+  .row-item input[type=date]{ width:auto; flex:0 0 152px; }
   .swatch{ width:20px; height:20px; border-radius:5px; border:1px solid rgba(0,0,0,.1); cursor:pointer; flex:none; }
 
   .helptext{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
@@ -1121,7 +1124,7 @@ function renderSetupStudents(){
     var grade = gradeLabelFor(s.id, state.data.activeYearId);
     return '<div class="row-item">'+
       '<span class="swatch" style="background:var(--'+s.color+')" title="Click to change color" data-action="student-color" data-id="'+s.id+'"></span>'+
-      '<input type="text" class="grow" value="'+esc(s.name)+'" placeholder="Name" style="max-width:150px;" '+bindAttrs('students',s.id,'name')+'>'+
+      '<input type="text" class="grow" value="'+esc(s.name)+'" placeholder="Name" '+bindAttrs('students',s.id,'name')+'>'+
       '<input type="text" value="'+esc(grade)+'" placeholder="Grade level" style="max-width:130px;" title="Grade for '+esc(yr.label)+'" '+bindAttrs('studentYear',s.id,'gradeLabel')+'>'+
       '<input type="date" value="'+esc(s.dob||'')+'" title="Date of birth \u2014 optional, only used on the transcript header" '+bindAttrs('students',s.id,'dob')+'>'+
       renderDeleteIconBtn('student:'+s.id)+
