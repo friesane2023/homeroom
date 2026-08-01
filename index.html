@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Homeroom — Homeschool Planner &amp; Gradebook</title>
 <meta name="description" content="A free, private lesson planner and gradebook for homeschool families. Runs entirely in your browser — your data never leaves your device.">
@@ -1113,15 +1116,18 @@ function renderSetupYears(){
 }
 
 function renderSetupStudents(){
+  var yr = activeYear();
   var rows = state.data.students.map(function(s){
+    var grade = gradeLabelFor(s.id, state.data.activeYearId);
     return '<div class="row-item">'+
       '<span class="swatch" style="background:var(--'+s.color+')" title="Click to change color" data-action="student-color" data-id="'+s.id+'"></span>'+
-      '<input type="text" class="grow" value="'+esc(s.name)+'" placeholder="Name" style="max-width:170px;" '+bindAttrs('students',s.id,'name')+'>'+
-      '<input type="date" value="'+esc(s.dob||'')+'" title="Date of birth" '+bindAttrs('students',s.id,'dob')+'>'+
+      '<input type="text" class="grow" value="'+esc(s.name)+'" placeholder="Name" style="max-width:150px;" '+bindAttrs('students',s.id,'name')+'>'+
+      '<input type="text" value="'+esc(grade)+'" placeholder="Grade level" style="max-width:130px;" title="Grade for '+esc(yr.label)+'" '+bindAttrs('studentYear',s.id,'gradeLabel')+'>'+
+      '<input type="date" value="'+esc(s.dob||'')+'" title="Date of birth \u2014 optional, only used on the transcript header" '+bindAttrs('students',s.id,'dob')+'>'+
       renderDeleteIconBtn('student:'+s.id)+
     '</div>';
   }).join('');
-  return '<div class="eyebrow">Learners</div><p class="helptext">Changes save automatically as you type. Grade level is set per school year \u2014 see the Years tab.</p>'+
+  return '<div class="eyebrow">Learners</div><p class="helptext">Changes save automatically as you type. Grade level is for the active school year (currently \u2018'+esc(yr.label)+'\u2019) \u2014 use the Years tab to add a new year when someone moves up; nothing is calculated from age. Birthdate is optional and only appears on the transcript header.</p>'+
     (rows || '<p class="helptext">No students yet.</p>')+
     '<div style="margin-top:14px;"><button class="btn btn-primary" data-action="student-add">'+icon('plus')+' Add student</button></div>';
 }
