@@ -1778,6 +1778,9 @@ function renderPlanner(){
   var subs = studentSubjects(student.id);
   var quarters = yearQuarters(state.data.activeYearId);
   var filt = state.plannerFilters;
+  // Subjects are per-student, so a subject filter left over from another
+  // student (or another year) matches nothing here -- fall back to all.
+  if(filt.subjectId!=='all' && !subs.some(function(s){ return s.id===filt.subjectId; })) filt.subjectId = 'all';
   var lessons = studentLessons(student.id).filter(function(l){
     if(filt.subjectId!=='all' && l.subjectId!==filt.subjectId) return false;
     if(filt.quarterId!=='all' && l.quarterId!==filt.quarterId) return false;

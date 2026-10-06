@@ -37,6 +37,13 @@ password you create in step 3.
    every device signs in with, in Setup → Data → Multi-device sync.
    Pick a password you're comfortable sharing with your kids, since
    they'll type it in on their own devices.
+4. While you're on the **Users** tab, copy the new login's **User UID**
+   (a long string of letters and numbers). You'll need it in step 4.
+5. Go to the **Settings** tab → **User actions** and **untick "Enable
+   create (sign-up)"**, then save. Your family login keeps working; this
+   only stops anyone else from creating their own account. Your app's
+   config (step 5) is public by design, so without this, anyone who
+   found it could sign themselves up.
 
 ## 4. Set the database's security rules
 
@@ -46,16 +53,21 @@ password you create in step 3.
 {
   "rules": {
     "homeroom": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      ".read": "auth != null && auth.uid === 'YOUR_FAMILY_UID'",
+      ".write": "auth != null && auth.uid === 'YOUR_FAMILY_UID'"
     }
   }
 }
 ```
 
-This means: only someone signed in (with the login from step 3) can read
-or write the family's data — nobody else, including anonymous visitors,
-can touch it. Click **Publish**.
+Replace both `YOUR_FAMILY_UID`s with the User UID you copied in step 3
+(keep the single quotes around it), then click **Publish**.
+
+This means: only your family login can read or write the family's data.
+Nobody else can touch it, not anonymous visitors and not some other
+signed-in account. Don't use the shorter `"auth != null"` here. That
+lets in *any* signed-in account, and Firebase will email you a warning
+about insecure rules.
 
 ## 5. Get your project's config and paste it into `index.html`
 
